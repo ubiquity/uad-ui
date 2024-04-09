@@ -6,6 +6,8 @@ import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {Script} from "forge-std/Script.sol";
+import {UbiquityAlgorithmicDollarManager} from "../../src/deprecated/UbiquityAlgorithmicDollarManager.sol";
+import {UbiquityGovernance} from "../../src/deprecated/UbiquityGovernance.sol";
 import {Diamond, DiamondArgs} from "../../src/dollar/Diamond.sol";
 import {UbiquityDollarToken} from "../../src/dollar/core/UbiquityDollarToken.sol";
 import {AccessControlFacet} from "../../src/dollar/facets/AccessControlFacet.sol";
@@ -93,11 +95,15 @@ contract DiamondInit is Modifiers {
  * - StakingFacet (staking is not a part of the initial deployment)
  * - StakingFormulasFacet (staking is not a part of the initial deployment)
  */
-contract Deploy001_Diamond_Dollar is Script, DiamondTestHelper {
+contract Deploy001_Diamond_Dollar_Governance is Script, DiamondTestHelper {
     // env variables
     uint256 adminPrivateKey;
     uint256 ownerPrivateKey;
     uint256 initialDollarMintAmountWei;
+
+    // owner and admin addresses derived from private keys store in `.env` file
+    address adminAddress;
+    address ownerAddress;
 
     // threshold in seconds when price feed response should be considered stale
     uint256 CHAINLINK_PRICE_FEED_THRESHOLD;
@@ -126,6 +132,10 @@ contract Deploy001_Diamond_Dollar is Script, DiamondTestHelper {
     // collateral ERC20 token used in UbiquityPoolFacet
     IERC20 collateralToken;
 
+    // Governance token related contracts
+    UbiquityAlgorithmicDollarManager ubiquityAlgorithmicDollarManager;
+    UbiquityGovernance ubiquityGovernance;
+
     // selectors for all of the facets
     bytes4[] selectorsOfAccessControlFacet;
     bytes4[] selectorsOfDiamondCutFacet;
@@ -142,8 +152,8 @@ contract Deploy001_Diamond_Dollar is Script, DiamondTestHelper {
             "INITIAL_DOLLAR_MINT_AMOUNT_WEI"
         );
 
-        address adminAddress = vm.addr(adminPrivateKey);
-        address ownerAddress = vm.addr(ownerPrivateKey);
+        adminAddress = vm.addr(adminPrivateKey);
+        ownerAddress = vm.addr(ownerPrivateKey);
 
         //==================
         // Before scripts
@@ -388,17 +398,22 @@ contract Deploy001_Diamond_Dollar is Script, DiamondTestHelper {
     /**
      * @notice Runs after the main `run()` method
      *
-     * @dev Initializes oracle related contracts
-     * @dev Ubiquity protocol supports 2 oracles:
+     * @dev Initializes:
+     * - oracle related contracts
+     * - Governance token related contracts
+     *
+     * @dev Ubiquity protocol supports 4 oracles:
      * 1. Curve's Dollar-3CRVLP metapool to fetch Dollar prices
      * 2. Chainlink's price feed (used in UbiquityPool) to fetch collateral token prices in USD
+     * 3. Chainlink's price feed (used in UbiquityPool) to fetch ETH/USD price
+     * 4. Curve's Governance-WETH crypto pool to fetch Governance/ETH price
      *
      * There are 2 migrations (deployment scripts):
-     * 1. Development (for usage in testnet and local anvil instance forked from mainnet)
+     * 1. Development (for usage in testnet and local anvil instance)
      * 2. Mainnet (for production usage in mainnet)
      *
      * Development migration deploys (for ease of debugging) mocks of:
-     * - Chainlink price feed contract
+     * - Chainlink collateral price feed contract
      * - 3CRVLP ERC20 token
      * - Curve's Dollar-3CRVLP metapool contract
      */
@@ -488,6 +503,34 @@ contract Deploy001_Diamond_Dollar is Script, DiamondTestHelper {
         managerFacet.setStableSwapMetaPoolAddress(address(curveDollarMetaPool));
 
         // stop sending admin transactions
+        vm.stopBroadcast();
+
+        //===========================================
+        // Deploy UbiquityAlgorithmicDollarManager
+        //===========================================
+
+        // start sending owner transactions
+        vm.startBroadcast(ownerPrivateKey);
+
+        ubiquityAlgorithmicDollarManager = new UbiquityAlgorithmicDollarManager(
+            ownerAddress
+        );
+
+        // stop sending owner transactions
+        vm.stopBroadcast();
+
+        //=============================
+        // Deploy UbiquityGovernance
+        //=============================
+
+        // start sending owner transactions
+        vm.startBroadcast(ownerPrivateKey);
+
+        ubiquityGovernance = new UbiquityGovernance(
+            address(ubiquityAlgorithmicDollarManager)
+        );
+
+        // stop sending owner transactions
         vm.stopBroadcast();
     }
 }

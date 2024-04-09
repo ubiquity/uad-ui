@@ -3,16 +3,20 @@ pragma solidity 0.8.19;
 
 import {AggregatorV3Interface} from "@chainlink/interfaces/AggregatorV3Interface.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {Deploy001_Diamond_Dollar as Deploy001_Diamond_Dollar_Development} from "../development/Deploy001_Diamond_Dollar.s.sol";
+import {Deploy001_Diamond_Dollar_Governance as Deploy001_Diamond_Dollar_Governance_Development} from "../development/Deploy001_Diamond_Dollar_Governance.s.sol";
+import {UbiquityAlgorithmicDollarManager} from "../../src/deprecated/UbiquityAlgorithmicDollarManager.sol";
+import {UbiquityGovernance} from "../../src/deprecated/UbiquityGovernance.sol";
 import {ManagerFacet} from "../../src/dollar/facets/ManagerFacet.sol";
 import {UbiquityPoolFacet} from "../../src/dollar/facets/UbiquityPoolFacet.sol";
 import {ICurveStableSwapFactoryNG} from "../../src/dollar/interfaces/ICurveStableSwapFactoryNG.sol";
 import {ICurveStableSwapMetaNG} from "../../src/dollar/interfaces/ICurveStableSwapMetaNG.sol";
 
 /// @notice Migration contract
-contract Deploy001_Diamond_Dollar is Deploy001_Diamond_Dollar_Development {
+contract Deploy001_Diamond_Dollar_Governance is
+    Deploy001_Diamond_Dollar_Governance_Development
+{
     function run() public override {
-        // Run migration for testnet because "Deploy001_Diamond_Dollar" migration
+        // Run migration for testnet because "Deploy001_Diamond_Dollar_Governance" migration
         // is identical both for testnet/development and mainnet
         super.run();
     }
@@ -42,23 +46,28 @@ contract Deploy001_Diamond_Dollar is Deploy001_Diamond_Dollar_Development {
     /**
      * @notice Runs after the main `run()` method
      *
-     * @dev Initializes oracle related contracts
+     * @dev Initializes:
+     * - oracle related contracts
+     * - Governance token related contracts
      *
-     * @dev We override `afterRun()` from `Deploy001_Diamond_Dollar_Development` because
-     * we need to use already deployed contracts while `Deploy001_Diamond_Dollar_Development`
-     * deploys all oracle related contracts from scratch for ease of debugging.
+     * @dev We override `afterRun()` from `Deploy001_Diamond_Dollar_Governance_Development` because
+     * we need to use already deployed contracts while `Deploy001_Diamond_Dollar_Governance_Development`
+     * deploys all oracle and Governance token related contracts from scratch for ease of debugging.
      *
-     * @dev Ubiquity protocol supports 2 oracles:
+     * @dev Ubiquity protocol supports 4 oracles:
      * 1. Curve's Dollar-3CRVLP metapool to fetch Dollar prices
      * 2. Chainlink's price feed (used in UbiquityPool) to fetch collateral token prices in USD
+     * 3. Chainlink's price feed (used in UbiquityPool) to fetch ETH/USD price
+     * 4. Curve's Governance-WETH crypto pool to fetch Governance/ETH price
      *
      * There are 2 migrations (deployment scripts):
-     * 1. Development (for usage in testnet and local anvil instance forked from mainnet)
+     * 1. Development (for usage in testnet and local anvil instance)
      * 2. Mainnet (for production usage in mainnet)
      *
      * Mainnet (i.e. production) migration uses already deployed contracts for:
-     * - Chainlink price feed contract
-     * - 3CRVLP ERC20 token
+     * - Chainlink collateral price feed contract
+     * - UbiquityAlgorithmicDollarManager contract
+     * - UbiquityGovernance token contract
      */
     function afterRun() public override {
         // read env variables
@@ -139,5 +148,23 @@ contract Deploy001_Diamond_Dollar is Deploy001_Diamond_Dollar_Development {
 
         // stop sending admin transactions
         vm.stopBroadcast();
+
+        //==========================================
+        // UbiquityAlgorithmicDollarManager setup
+        //==========================================
+
+        // using already deployed (on mainnet) UbiquityAlgorithmicDollarManager
+        ubiquityAlgorithmicDollarManager = UbiquityAlgorithmicDollarManager(
+            0x4DA97a8b831C345dBe6d16FF7432DF2b7b776d98
+        );
+
+        //============================
+        // UbiquityGovernance setup
+        //============================
+
+        // using already deployed (on mainnet) Governance token
+        ubiquityGovernance = UbiquityGovernance(
+            0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0
+        );
     }
 }

@@ -11,8 +11,8 @@
     "**/cspell.json",
     "**/node_modules/**",
     "packages/contracts/src/deprecated/*",
-    "packages/contracts/migrations/development/Deploy002_Governance.s.sol",
-    "packages/contracts/migrations/mainnet/Deploy002_Governance.s.sol"
+    "packages/contracts/migrations/development/Deploy001_Diamond_Dollar_Governance.s.sol",
+    "packages/contracts/migrations/mainnet/Deploy001_Diamond_Dollar_Governance.s.sol"
   ],
   "readonly": true,
   "useGitignore": true,
