@@ -17,15 +17,17 @@ import {ManagerFacet} from "../../src/dollar/facets/ManagerFacet.sol";
 import {OwnershipFacet} from "../../src/dollar/facets/OwnershipFacet.sol";
 import {UbiquityPoolFacet} from "../../src/dollar/facets/UbiquityPoolFacet.sol";
 import {ICurveStableSwapMetaNG} from "../../src/dollar/interfaces/ICurveStableSwapMetaNG.sol";
+import {ICurveTwocryptoOptimized} from "../../src/dollar/interfaces/ICurveTwocryptoOptimized.sol";
 import {IDiamondCut} from "../../src/dollar/interfaces/IDiamondCut.sol";
 import {IDiamondLoupe} from "../../src/dollar/interfaces/IDiamondLoupe.sol";
 import {IERC173} from "../../src/dollar/interfaces/IERC173.sol";
-import {DEFAULT_ADMIN_ROLE, DOLLAR_TOKEN_MINTER_ROLE, DOLLAR_TOKEN_BURNER_ROLE, PAUSER_ROLE} from "../../src/dollar/libraries/Constants.sol";
+import {DEFAULT_ADMIN_ROLE, DOLLAR_TOKEN_MINTER_ROLE, DOLLAR_TOKEN_BURNER_ROLE, GOVERNANCE_TOKEN_MINTER_ROLE, GOVERNANCE_TOKEN_BURNER_ROLE, PAUSER_ROLE} from "../../src/dollar/libraries/Constants.sol";
 import {LibAccessControl} from "../../src/dollar/libraries/LibAccessControl.sol";
 import {AppStorage, LibAppStorage, Modifiers} from "../../src/dollar/libraries/LibAppStorage.sol";
 import {LibDiamond} from "../../src/dollar/libraries/LibDiamond.sol";
 import {MockChainLinkFeed} from "../../src/dollar/mocks/MockChainLinkFeed.sol";
 import {MockCurveStableSwapMetaNG} from "../../src/dollar/mocks/MockCurveStableSwapMetaNG.sol";
+import {MockCurveTwocryptoOptimized} from "../../src/dollar/mocks/MockCurveTwocryptoOptimized.sol";
 import {MockERC20} from "../../src/dollar/mocks/MockERC20.sol";
 import {DiamondTestHelper} from "../../test/helpers/DiamondTestHelper.sol";
 
@@ -125,9 +127,11 @@ contract Deploy001_Diamond_Dollar_Governance is Script, DiamondTestHelper {
     UbiquityPoolFacet ubiquityPoolFacetImplementation;
 
     // oracle related contracts
+    AggregatorV3Interface chainLinkPriceFeedEth; // chainlink ETH/USD price feed
     AggregatorV3Interface chainLinkPriceFeedLusd; // chainlink LUSD/USD price feed
     IERC20 curveTriPoolLpToken; // Curve's 3CRV-LP token
     ICurveStableSwapMetaNG curveDollarMetaPool; // Curve's Dollar-3CRVLP metapool
+    ICurveTwocryptoOptimized curveGovernanceEthPool; // Curve's Governance-WETH crypto pool
 
     // collateral ERC20 token used in UbiquityPoolFacet
     IERC20 collateralToken;
@@ -317,6 +321,8 @@ contract Deploy001_Diamond_Dollar_Governance is Script, DiamondTestHelper {
         ubiquityPoolFacet.setRedemptionDelayBlocks(2);
         // set mint price threshold to $1.01 and redeem price to $0.99
         ubiquityPoolFacet.setPriceThresholds(1010000, 990000);
+        // set collateral ratio to 95%
+        ubiquityPoolFacet.setCollateralRatio(950_000);
 
         // stop sending admin transactions
         vm.stopBroadcast();
@@ -414,10 +420,20 @@ contract Deploy001_Diamond_Dollar_Governance is Script, DiamondTestHelper {
      *
      * Development migration deploys (for ease of debugging) mocks of:
      * - Chainlink collateral price feed contract
+     * - Chainlink ETH/USD price feed contract
      * - 3CRVLP ERC20 token
+     * - WETH token
      * - Curve's Dollar-3CRVLP metapool contract
+     * - Curve's Governance-WETH crypto pool contract
      */
     function afterRun() public virtual {
+        UbiquityPoolFacet ubiquityPoolFacet = UbiquityPoolFacet(
+            address(diamond)
+        );
+
+        // set threshold to 10 years (3650 days) for ease of debugging
+        CHAINLINK_PRICE_FEED_THRESHOLD = 3650 days;
+
         //========================================
         // Chainlink LUSD/USD price feed deploy
         //========================================
@@ -438,9 +454,6 @@ contract Deploy001_Diamond_Dollar_Governance is Script, DiamondTestHelper {
         // start sending admin transactions
         vm.startBroadcast(adminPrivateKey);
 
-        // set threshold to 10 years (3650 days) for ease of debugging
-        CHAINLINK_PRICE_FEED_THRESHOLD = 3650 days;
-
         // set params for LUSD/USD chainlink price feed mock
         MockChainLinkFeed(address(chainLinkPriceFeedLusd)).updateMockParams(
             1, // round id
@@ -448,10 +461,6 @@ contract Deploy001_Diamond_Dollar_Governance is Script, DiamondTestHelper {
             block.timestamp, // started at
             block.timestamp, // updated at
             1 // answered in round
-        );
-
-        UbiquityPoolFacet ubiquityPoolFacet = UbiquityPoolFacet(
-            address(diamond)
         );
 
         // set price feed address and threshold in seconds
@@ -531,6 +540,106 @@ contract Deploy001_Diamond_Dollar_Governance is Script, DiamondTestHelper {
         );
 
         // stop sending owner transactions
+        vm.stopBroadcast();
+
+        //==================================
+        // UbiquityGovernance token setup
+        //==================================
+
+        // start sending admin transactions
+        vm.startBroadcast(adminPrivateKey);
+
+        AccessControlFacet accessControlFacet = AccessControlFacet(
+            address(diamond)
+        );
+
+        // grant diamond Governance token minting and burning rights
+        accessControlFacet.grantRole(
+            GOVERNANCE_TOKEN_MINTER_ROLE,
+            address(diamond)
+        );
+        accessControlFacet.grantRole(
+            GOVERNANCE_TOKEN_BURNER_ROLE,
+            address(diamond)
+        );
+
+        // stop sending admin transactions
+        vm.stopBroadcast();
+
+        //=======================================
+        // Chainlink ETH/USD price feed deploy
+        //=======================================
+
+        // start sending owner transactions
+        vm.startBroadcast(ownerPrivateKey);
+
+        // deploy ETH/USD chainlink mock price feed
+        chainLinkPriceFeedEth = new MockChainLinkFeed();
+
+        // stop sending owner transactions
+        vm.stopBroadcast();
+
+        //======================================
+        // Chainlink ETH/USD price feed setup
+        //======================================
+
+        // start sending admin transactions
+        vm.startBroadcast(adminPrivateKey);
+
+        // set ETH/USD price feed mock params
+        MockChainLinkFeed(address(chainLinkPriceFeedEth)).updateMockParams(
+            1, // round id
+            3000_00000000, // answer, 3000_00000000 = $3000 (8 decimals)
+            block.timestamp, // started at
+            block.timestamp, // updated at
+            1 // answered in round
+        );
+
+        // set price feed for ETH/USD pair
+        ubiquityPoolFacet.setEthUsdChainLinkPriceFeed(
+            address(chainLinkPriceFeedEth), // price feed address
+            CHAINLINK_PRICE_FEED_THRESHOLD // price feed staleness threshold in seconds
+        );
+
+        // stop sending admin transactions
+        vm.stopBroadcast();
+
+        //==============================================
+        // Curve's Governance-WETH crypto pool deploy
+        //==============================================
+
+        // start sending owner transactions
+        vm.startBroadcast(ownerPrivateKey);
+
+        // init mock WETH token
+        IERC20 wethToken = new MockERC20("WETH", "WETH", 18);
+
+        // init Curve Governance-WETH crypto pool
+        curveGovernanceEthPool = new MockCurveTwocryptoOptimized(
+            address(ubiquityGovernance),
+            address(wethToken)
+        );
+
+        // stop sending owner transactions
+        vm.stopBroadcast();
+
+        //=============================================
+        // Curve's Governance-WETH crypto pool setup
+        //=============================================
+
+        // start sending admin transactions
+        vm.startBroadcast(adminPrivateKey);
+
+        // set ETH/Governance price to 30k in Curve pool mock
+        MockCurveTwocryptoOptimized(address(curveGovernanceEthPool))
+            .updateMockParams(30_000e18);
+
+        // set Governance-ETH pool
+        ubiquityPoolFacet.setGovernanceEthPoolAddress(
+            address(curveGovernanceEthPool)
+        );
+
+        // stop sending admin transactions
         vm.stopBroadcast();
     }
 }

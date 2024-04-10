@@ -10,6 +10,7 @@ import {ManagerFacet} from "../../src/dollar/facets/ManagerFacet.sol";
 import {UbiquityPoolFacet} from "../../src/dollar/facets/UbiquityPoolFacet.sol";
 import {ICurveStableSwapFactoryNG} from "../../src/dollar/interfaces/ICurveStableSwapFactoryNG.sol";
 import {ICurveStableSwapMetaNG} from "../../src/dollar/interfaces/ICurveStableSwapMetaNG.sol";
+import {ICurveTwocryptoOptimized} from "../../src/dollar/interfaces/ICurveTwocryptoOptimized.sol";
 
 /// @notice Migration contract
 contract Deploy001_Diamond_Dollar_Governance is
@@ -68,11 +69,26 @@ contract Deploy001_Diamond_Dollar_Governance is
      * - Chainlink collateral price feed contract
      * - UbiquityAlgorithmicDollarManager contract
      * - UbiquityGovernance token contract
+     * - Chainlink ETH/USD price feed
+     * - Curve's Governance-WETH crypto pool
      */
     function afterRun() public override {
         // read env variables
-        address chainlinkPriceFeedAddress = vm.envAddress(
+        address chainlinkPriceFeedAddressEth = vm.envAddress(
+            "ETH_USD_CHAINLINK_PRICE_FEED_ADDRESS"
+        );
+        address chainlinkPriceFeedAddressLusd = vm.envAddress(
             "COLLATERAL_TOKEN_CHAINLINK_PRICE_FEED_ADDRESS"
+        );
+        address curveGovernanceEthPoolAddress = vm.envAddress(
+            "CURVE_GOVERNANCE_WETH_POOL_ADDRESS"
+        );
+
+        // set threshold to 1 hour (default value for ETH/USD and LUSD/USD price feeds)
+        CHAINLINK_PRICE_FEED_THRESHOLD = 1 hours;
+
+        UbiquityPoolFacet ubiquityPoolFacet = UbiquityPoolFacet(
+            address(diamond)
         );
 
         //=======================================
@@ -82,16 +98,9 @@ contract Deploy001_Diamond_Dollar_Governance is
         // start sending admin transactions
         vm.startBroadcast(adminPrivateKey);
 
-        // set threshold to 1 day
-        CHAINLINK_PRICE_FEED_THRESHOLD = 1 days;
-
         // init LUSD/USD chainlink price feed
         chainLinkPriceFeedLusd = AggregatorV3Interface(
-            chainlinkPriceFeedAddress
-        );
-
-        UbiquityPoolFacet ubiquityPoolFacet = UbiquityPoolFacet(
-            address(diamond)
+            chainlinkPriceFeedAddressLusd
         );
 
         // set price feed
@@ -162,9 +171,81 @@ contract Deploy001_Diamond_Dollar_Governance is
         // UbiquityGovernance setup
         //============================
 
+        // NOTICE: If owner address is `ubq.eth` (i.e. ubiquity deployer) it means that we want to perform
+        // a real deployment to mainnet so we start sending transactions via `startBroadcast()` otherwise
+        // we're in the forked mainnet anvil instance so we simulate sending transactions from `ubq.eth`
+        // address for ease of debugging.
+        address ubiquityDeployerAddress = 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd;
+
+        // Start sending owner transactions
+        if (ownerAddress == ubiquityDeployerAddress) {
+            vm.startBroadcast(ownerPrivateKey);
+        } else {
+            vm.startPrank(ubiquityDeployerAddress);
+        }
+
         // using already deployed (on mainnet) Governance token
         ubiquityGovernance = UbiquityGovernance(
             0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0
         );
+
+        // Owner (i.e. `ubq.eth` who is admin for UbiquityAlgorithmicDollarManager) grants diamond
+        // Governance token mint and burn rights
+        ubiquityAlgorithmicDollarManager.grantRole(
+            keccak256("UBQ_MINTER_ROLE"),
+            address(diamond)
+        );
+        ubiquityAlgorithmicDollarManager.grantRole(
+            keccak256("UBQ_BURNER_ROLE"),
+            address(diamond)
+        );
+
+        // stop sending owner transactions
+        if (ownerAddress == ubiquityDeployerAddress) {
+            vm.stopBroadcast();
+        } else {
+            vm.stopPrank();
+        }
+
+        //======================================
+        // Chainlink ETH/USD price feed setup
+        //======================================
+
+        // start sending admin transactions
+        vm.startBroadcast(adminPrivateKey);
+
+        // init ETH/USD chainlink price feed
+        chainLinkPriceFeedEth = AggregatorV3Interface(
+            chainlinkPriceFeedAddressEth
+        );
+
+        // set price feed for ETH/USD pair
+        ubiquityPoolFacet.setEthUsdChainLinkPriceFeed(
+            address(chainLinkPriceFeedEth), // price feed address
+            CHAINLINK_PRICE_FEED_THRESHOLD // price feed staleness threshold in seconds
+        );
+
+        // stop sending admin transactions
+        vm.stopBroadcast();
+
+        //=============================================
+        // Curve's Governance-WETH crypto pool setup
+        //=============================================
+
+        // start sending admin transactions
+        vm.startBroadcast(adminPrivateKey);
+
+        // init Curve Governance-WETH crypto pool
+        curveGovernanceEthPool = ICurveTwocryptoOptimized(
+            curveGovernanceEthPoolAddress
+        );
+
+        // set Governance-ETH pool
+        ubiquityPoolFacet.setGovernanceEthPoolAddress(
+            address(curveGovernanceEthPool)
+        );
+
+        // stop sending admin transactions
+        vm.stopBroadcast();
     }
 }
