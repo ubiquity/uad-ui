@@ -427,6 +427,7 @@ contract Deploy001_Diamond_Dollar_Governance is Script, DiamondTestHelper {
      * - Curve's Governance-WETH crypto pool contract
      */
     function afterRun() public virtual {
+        ManagerFacet managerFacet = ManagerFacet(address(diamond));
         UbiquityPoolFacet ubiquityPoolFacet = UbiquityPoolFacet(
             address(diamond)
         );
@@ -506,8 +507,6 @@ contract Deploy001_Diamond_Dollar_Governance is Script, DiamondTestHelper {
         // start sending admin transactions
         vm.startBroadcast(adminPrivateKey);
 
-        ManagerFacet managerFacet = ManagerFacet(address(diamond));
-
         // set curve's metapool in manager facet
         managerFacet.setStableSwapMetaPoolAddress(address(curveDollarMetaPool));
 
@@ -562,6 +561,9 @@ contract Deploy001_Diamond_Dollar_Governance is Script, DiamondTestHelper {
             GOVERNANCE_TOKEN_BURNER_ROLE,
             address(diamond)
         );
+
+        // set Governance token address in manager facet
+        managerFacet.setGovernanceTokenAddress(address(ubiquityGovernance));
 
         // stop sending admin transactions
         vm.stopBroadcast();

@@ -87,6 +87,7 @@ contract Deploy001_Diamond_Dollar_Governance is
         // set threshold to 1 hour (default value for ETH/USD and LUSD/USD price feeds)
         CHAINLINK_PRICE_FEED_THRESHOLD = 1 hours;
 
+        ManagerFacet managerFacet = ManagerFacet(address(diamond));
         UbiquityPoolFacet ubiquityPoolFacet = UbiquityPoolFacet(
             address(diamond)
         );
@@ -152,7 +153,6 @@ contract Deploy001_Diamond_Dollar_Governance is
         vm.startBroadcast(adminPrivateKey);
 
         // set curve's metapool in manager facet
-        ManagerFacet managerFacet = ManagerFacet(address(diamond));
         managerFacet.setStableSwapMetaPoolAddress(curveDollarMetaPoolAddress);
 
         // stop sending admin transactions
@@ -172,16 +172,40 @@ contract Deploy001_Diamond_Dollar_Governance is
         //============================
 
         // NOTICE: If owner address is `ubq.eth` (i.e. ubiquity deployer) it means that we want to perform
-        // a real deployment to mainnet so we start sending transactions via `startBroadcast()` otherwise
-        // we're in the forked mainnet anvil instance so we simulate sending transactions from `ubq.eth`
-        // address for ease of debugging.
+        // a real deployment to mainnet so we start sending transactions via `startBroadcast()`. Otherwise
+        // we're in the forked mainnet anvil instance and the owner is not `ubq.eth` so we can't add "UBQ_MINTER_ROLE"
+        // and "UBQ_BURNER_ROLE" roles to the diamond contract (because only `ubq.eth` address has this permission).
+        // Also we can't use "vm.prank()" since it doesn't update the storage but only simulates a call. That is why
+        // if you're testing on an anvil instance forked from mainnet make sure to add "UBQ_MINTER_ROLE" and "UBQ_BURNER_ROLE"
+        // roles to the diamond contract manually. Take this command for inspiration:
+        // ```
+        // DIAMOND_ADDRESS=0x9Bb65b12162a51413272d10399282E730822Df44; \
+        // UBQ_ETH_ADDRESS=0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd; \
+        // UBIQUITY_ALGORITHMIC_DOLLAR_MANAGER=0x4DA97a8b831C345dBe6d16FF7432DF2b7b776d98; \
+        // cast rpc anvil_impersonateAccount $UBQ_ETH_ADDRESS; \
+        // cast send --unlocked --from $UBQ_ETH_ADDRESS $UBIQUITY_ALGORITHMIC_DOLLAR_MANAGER "grantRole(bytes32,address)" $(cast keccak "UBQ_BURNER_ROLE") $DIAMOND_ADDRESS --rpc-url http://localhost:8545; \
+        // cast send --unlocked --from $UBQ_ETH_ADDRESS $UBIQUITY_ALGORITHMIC_DOLLAR_MANAGER "grantRole(bytes32,address)" $(cast keccak "UBQ_MINTER_ROLE") $DIAMOND_ADDRESS --rpc-url http://localhost:8545; \
+        // cast rpc anvil_stopImpersonatingAccount $UBQ_ETH_ADDRESS;
+        // ```
         address ubiquityDeployerAddress = 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd;
 
-        // Start sending owner transactions
         if (ownerAddress == ubiquityDeployerAddress) {
+            // Start sending owner transactions
             vm.startBroadcast(ownerPrivateKey);
-        } else {
-            vm.startPrank(ubiquityDeployerAddress);
+
+            // Owner (i.e. `ubq.eth` who is admin for UbiquityAlgorithmicDollarManager) grants diamond
+            // Governance token mint and burn rights
+            ubiquityAlgorithmicDollarManager.grantRole(
+                keccak256("UBQ_MINTER_ROLE"),
+                address(diamond)
+            );
+            ubiquityAlgorithmicDollarManager.grantRole(
+                keccak256("UBQ_BURNER_ROLE"),
+                address(diamond)
+            );
+
+            // stop sending owner transactions
+            vm.stopBroadcast();
         }
 
         // using already deployed (on mainnet) Governance token
@@ -189,23 +213,14 @@ contract Deploy001_Diamond_Dollar_Governance is
             0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0
         );
 
-        // Owner (i.e. `ubq.eth` who is admin for UbiquityAlgorithmicDollarManager) grants diamond
-        // Governance token mint and burn rights
-        ubiquityAlgorithmicDollarManager.grantRole(
-            keccak256("UBQ_MINTER_ROLE"),
-            address(diamond)
-        );
-        ubiquityAlgorithmicDollarManager.grantRole(
-            keccak256("UBQ_BURNER_ROLE"),
-            address(diamond)
-        );
+        // start sending admin transactions
+        vm.startBroadcast(adminPrivateKey);
 
-        // stop sending owner transactions
-        if (ownerAddress == ubiquityDeployerAddress) {
-            vm.stopBroadcast();
-        } else {
-            vm.stopPrank();
-        }
+        // admin sets Governance token address in manager facet
+        managerFacet.setGovernanceTokenAddress(address(ubiquityGovernance));
+
+        // stop sending admin transactions
+        vm.stopBroadcast();
 
         //======================================
         // Chainlink ETH/USD price feed setup
