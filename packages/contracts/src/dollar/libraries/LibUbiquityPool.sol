@@ -994,7 +994,8 @@ library LibUbiquityPool {
 
     /**
      * @notice Sets collateral ratio
-     * @dev How much collateral/governance tokens user should provide/get to mint/redeem Dollar tokens, 1e6 precision
+     * @dev How much collateral/governance tokens user should provide/get to mint/redeem Dollar tokens, 1e6 precision.
+     * @dev Collateral ratio is capped to 100%.
      *
      * @dev Example (1_000_000 = 100%):
      * - Mint: user provides 1 collateral token to get 1 Dollar
@@ -1007,6 +1008,7 @@ library LibUbiquityPool {
      * @param newCollateralRatio New collateral ratio
      */
     function setCollateralRatio(uint256 newCollateralRatio) internal {
+        require(newCollateralRatio <= 1_000_000, "Collateral ratio too large");
         UbiquityPoolStorage storage poolStorage = ubiquityPoolStorage();
 
         poolStorage.collateralRatio = newCollateralRatio;

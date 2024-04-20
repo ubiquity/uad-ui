@@ -1387,6 +1387,20 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         vm.stopPrank();
     }
 
+    function testSetCollateralRatio_ShouldRevertIfRatioLargerThanOneHundredPercent()
+        public
+    {
+        vm.startPrank(admin);
+        uint256 oldCollateralRatio = ubiquityPoolFacet.collateralRatio();
+        assertEq(oldCollateralRatio, 1_000_000);
+
+        uint256 newCollateralRatio = 1_000_001;
+        vm.expectRevert("Collateral ratio too large");
+        ubiquityPoolFacet.setCollateralRatio(newCollateralRatio);
+
+        vm.stopPrank();
+    }
+
     function testSetEthUsdChainLinkPriceFeed_ShouldSetEthUsdChainLinkPriceFeed()
         public
     {
