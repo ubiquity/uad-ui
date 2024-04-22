@@ -6,7 +6,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import {ICurveStableSwapMetaNG} from "../interfaces/ICurveStableSwapMetaNG.sol";
+import {ICurveStableSwapNG} from "../interfaces/ICurveStableSwapNG.sol";
 import {ICurveTwocryptoOptimized} from "../interfaces/ICurveTwocryptoOptimized.sol";
 import {IDollarAmoMinter} from "../interfaces/IDollarAmoMinter.sol";
 import {IERC20Ubiquity} from "../interfaces/IERC20Ubiquity.sol";
@@ -373,7 +373,7 @@ library LibUbiquityPool {
         // load storage shared across all libraries
         AppStorage storage store = LibAppStorage.appStorage();
         // get Dollar price from Curve Metapool (18 decimals)
-        uint256 dollarPriceUsdD18 = ICurveStableSwapMetaNG(
+        uint256 dollarPriceUsdD18 = ICurveStableSwapNG(
             store.stableSwapMetaPoolAddress
         ).price_oracle(0);
         // convert to 6 decimals
