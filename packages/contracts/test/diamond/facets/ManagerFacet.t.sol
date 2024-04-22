@@ -85,6 +85,14 @@ contract ManagerFacetTest is DiamondTestSetup {
         assertEq(managerFacet.stableSwapMetaPoolAddress(), contract1);
     }
 
+    function testSetStableSwapPlainPoolAddress_ShouldSucceed()
+        public
+        prankAs(admin)
+    {
+        managerFacet.setStableSwapPlainPoolAddress(contract1);
+        assertEq(managerFacet.stableSwapPlainPoolAddress(), contract1);
+    }
+
     function testSetStakingContractAddress_ShouldSucceed()
         public
         prankAs(admin)

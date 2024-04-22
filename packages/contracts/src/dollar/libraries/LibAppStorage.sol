@@ -17,6 +17,7 @@ struct AppStorage {
     address stakingShareAddress;
     address stakingContractAddress;
     address stableSwapMetaPoolAddress;
+    address stableSwapPlainPoolAddress;
     address curve3PoolTokenAddress; // 3CRV
     address treasuryAddress;
     address governanceTokenAddress;

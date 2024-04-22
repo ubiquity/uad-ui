@@ -145,6 +145,17 @@ contract ManagerFacet is Modifiers {
     }
 
     /**
+     * @notice Sets Curve's Dollar-Stablecoin plain pool address
+     * @dev `_stableSwapPlainPoolAddress` is used to fetch Dollar price in USD
+     * @param _stableSwapPlainPoolAddress Curve's Dollar-Stablecoin plain pool address
+     */
+    function setStableSwapPlainPoolAddress(
+        address _stableSwapPlainPoolAddress
+    ) external onlyAdmin {
+        store.stableSwapPlainPoolAddress = _stableSwapPlainPoolAddress;
+    }
+
+    /**
      * @notice Sets staking contract address
      * @dev Staking contract participants deposit Curve LP tokens
      * for a certain duration to earn Governance tokens and more Curve LP tokens
@@ -383,6 +394,14 @@ contract ManagerFacet is Modifiers {
      */
     function stableSwapMetaPoolAddress() external view returns (address) {
         return store.stableSwapMetaPoolAddress;
+    }
+
+    /**
+     * @notice Returns Curve's plain pool address for Dollar-Stablecoin pair
+     * @return Curve's plain pool address for Dollar-Stablecoin pair
+     */
+    function stableSwapPlainPoolAddress() external view returns (address) {
+        return store.stableSwapPlainPoolAddress;
     }
 
     /**
