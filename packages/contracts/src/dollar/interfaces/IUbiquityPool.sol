@@ -121,6 +121,16 @@ interface IUbiquityPool {
      */
     function governanceEthPoolAddress() external view returns (address);
 
+    /**
+     * @notice Returns chainlink price feed information for stable/ETH pair
+     * @dev Here stable coin refers to the 1st coin in the Curve's stable/Dollar plain pool
+     * @return Price feed address and staleness threshold in seconds
+     */
+    function stableEthPriceFeedInformation()
+        external
+        view
+        returns (address, uint256);
+
     //====================
     // Public functions
     //====================
@@ -326,6 +336,16 @@ interface IUbiquityPool {
      */
     function setRedemptionDelayBlocks(
         uint256 newRedemptionDelayBlocks
+    ) external;
+
+    /**
+     * @notice Sets chainlink params for stable/ETH price feed
+     * @param newPriceFeedAddress New chainlink price feed address for stable/ETH pair
+     * @param newStalenessThreshold New threshold in seconds when chainlink's stable/ETH price feed answer should be considered stale
+     */
+    function setStableEthChainLinkPriceFeed(
+        address newPriceFeedAddress,
+        uint256 newStalenessThreshold
     ) external;
 
     /**

@@ -116,6 +116,15 @@ contract UbiquityPoolFacet is IUbiquityPool, Modifiers {
         return LibUbiquityPool.governanceEthPoolAddress();
     }
 
+    /// @inheritdoc IUbiquityPool
+    function stableEthPriceFeedInformation()
+        external
+        view
+        returns (address, uint256)
+    {
+        return LibUbiquityPool.stableEthPriceFeedInformation();
+    }
+
     //====================
     // Public functions
     //====================
@@ -291,6 +300,17 @@ contract UbiquityPoolFacet is IUbiquityPool, Modifiers {
         uint256 newRedemptionDelayBlocks
     ) external onlyAdmin {
         LibUbiquityPool.setRedemptionDelayBlocks(newRedemptionDelayBlocks);
+    }
+
+    /// @inheritdoc IUbiquityPool
+    function setStableEthChainLinkPriceFeed(
+        address newPriceFeedAddress,
+        uint256 newStalenessThreshold
+    ) external onlyAdmin {
+        LibUbiquityPool.setStableEthChainLinkPriceFeed(
+            newPriceFeedAddress,
+            newStalenessThreshold
+        );
     }
 
     /// @inheritdoc IUbiquityPool

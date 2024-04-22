@@ -28,6 +28,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
     MockCurveTwocryptoOptimized curveGovernanceEthPool;
     MockERC20 curveTriPoolLpToken;
     MockChainLinkFeed ethUsdPriceFeed;
+    MockChainLinkFeed stableEthPriceFeed;
     MockERC20 wethToken;
 
     address user = address(1);
@@ -60,6 +61,10 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         uint256 newRedeemPriceThreshold
     );
     event RedemptionDelayBlocksSet(uint256 redemptionDelayBlocks);
+    event StableEthPriceFeedSet(
+        address newPriceFeedAddress,
+        uint256 newStalenessThreshold
+    );
 
     function setUp() public override {
         super.setUp();
@@ -74,6 +79,9 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
 
         // init ETH/USD price feed
         ethUsdPriceFeed = new MockChainLinkFeed();
+
+        // init stable/ETH price feed
+        stableEthPriceFeed = new MockChainLinkFeed();
 
         // init WETH token
         wethToken = new MockERC20("WETH", "WETH", 18);
@@ -119,6 +127,15 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
             1 // answered in round
         );
 
+        // set stable/ETH price feed mock params
+        stableEthPriceFeed.updateMockParams(
+            1, // round id
+            330000000000000, // answer, 330000000000000 = 0.00033 ETH (18 decimals)
+            block.timestamp, // started at
+            block.timestamp, // updated at
+            1 // answered in round
+        );
+
         // set ETH/Governance price to 30k in Curve pool mock
         curveGovernanceEthPool.updateMockParams(30_000e18);
 
@@ -132,6 +149,12 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         // set price feed for ETH/USD pair
         ubiquityPoolFacet.setEthUsdChainLinkPriceFeed(
             address(ethUsdPriceFeed), // price feed address
+            1 days // price feed staleness threshold in seconds
+        );
+
+        // set price feed for stable/ETH pair
+        ubiquityPoolFacet.setStableEthChainLinkPriceFeed(
+            address(stableEthPriceFeed), // price feed address
             1 days // price feed staleness threshold in seconds
         );
 
@@ -453,6 +476,15 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         address governanceEthPoolAddress = ubiquityPoolFacet
             .governanceEthPoolAddress();
         assertEq(governanceEthPoolAddress, address(curveGovernanceEthPool));
+    }
+
+    function testStableEthPriceFeedInformation_ShouldReturnStableEthPriceFeedInformation()
+        public
+    {
+        (address priceFeed, uint256 stalenessThreshold) = ubiquityPoolFacet
+            .stableEthPriceFeedInformation();
+        assertEq(priceFeed, address(stableEthPriceFeed));
+        assertEq(stalenessThreshold, 1 days);
     }
 
     //====================
@@ -1505,6 +1537,37 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         vm.expectEmit(address(ubiquityPoolFacet));
         emit RedemptionDelayBlocksSet(2);
         ubiquityPoolFacet.setRedemptionDelayBlocks(2);
+
+        vm.stopPrank();
+    }
+
+    function testSetStableEthChainLinkPriceFeed_ShouldSetStableEthChainLinkPriceFeed()
+        public
+    {
+        vm.startPrank(admin);
+
+        (
+            address oldPriceFeedAddress,
+            uint256 oldStalenessThreshold
+        ) = ubiquityPoolFacet.stableEthPriceFeedInformation();
+        assertEq(oldPriceFeedAddress, address(stableEthPriceFeed));
+        assertEq(oldStalenessThreshold, 1 days);
+
+        address newPriceFeedAddress = address(1);
+        uint256 newStalenessThreshold = 2 days;
+        vm.expectEmit(address(ubiquityPoolFacet));
+        emit StableEthPriceFeedSet(newPriceFeedAddress, newStalenessThreshold);
+        ubiquityPoolFacet.setStableEthChainLinkPriceFeed(
+            newPriceFeedAddress,
+            newStalenessThreshold
+        );
+
+        (
+            address updatedPriceFeedAddress,
+            uint256 updatedStalenessThreshold
+        ) = ubiquityPoolFacet.stableEthPriceFeedInformation();
+        assertEq(updatedPriceFeedAddress, newPriceFeedAddress);
+        assertEq(updatedStalenessThreshold, newStalenessThreshold);
 
         vm.stopPrank();
     }

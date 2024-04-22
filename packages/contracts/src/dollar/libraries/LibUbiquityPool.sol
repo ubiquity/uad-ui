@@ -103,6 +103,13 @@ library LibUbiquityPool {
         uint256 ethUsdPriceFeedStalenessThreshold;
         // Curve's CurveTwocryptoOptimized contract for Governance/ETH pair
         address governanceEthPoolAddress;
+        //================================
+        // Dollar token pricing related
+        //================================
+        // chainlink price feed for stable/ETH pair
+        address stableEthPriceFeedAddress;
+        // threshold in seconds when chainlink's stable/ETH price feed answer should be considered stale
+        uint256 stableEthPriceFeedStalenessThreshold;
     }
 
     /// @notice Struct used for detailed collateral information
@@ -182,6 +189,11 @@ library LibUbiquityPool {
     );
     /// @notice Emitted when a new redemption delay in blocks is set
     event RedemptionDelayBlocksSet(uint256 redemptionDelayBlocks);
+    /// @notice Emitted on setting chainlink's price feed for stable/ETH pair
+    event StableEthPriceFeedSet(
+        address newPriceFeedAddress,
+        uint256 newStalenessThreshold
+    );
 
     //=====================
     // Modifiers
@@ -465,6 +477,23 @@ library LibUbiquityPool {
     function governanceEthPoolAddress() internal view returns (address) {
         UbiquityPoolStorage storage poolStorage = ubiquityPoolStorage();
         return poolStorage.governanceEthPoolAddress;
+    }
+
+    /**
+     * @notice Returns chainlink price feed information for stable/ETH pair
+     * @dev Here stable coin refers to the 1st coin in the Curve's stable/Dollar plain pool
+     * @return Price feed address and staleness threshold in seconds
+     */
+    function stableEthPriceFeedInformation()
+        internal
+        view
+        returns (address, uint256)
+    {
+        UbiquityPoolStorage storage poolStorage = ubiquityPoolStorage();
+        return (
+            poolStorage.stableEthPriceFeedAddress,
+            poolStorage.stableEthPriceFeedStalenessThreshold
+        );
     }
 
     //====================
@@ -1122,6 +1151,24 @@ library LibUbiquityPool {
         poolStorage.redemptionDelayBlocks = newRedemptionDelayBlocks;
 
         emit RedemptionDelayBlocksSet(newRedemptionDelayBlocks);
+    }
+
+    /**
+     * @notice Sets chainlink params for stable/ETH price feed
+     * @param newPriceFeedAddress New chainlink price feed address for stable/ETH pair
+     * @param newStalenessThreshold New threshold in seconds when chainlink's stable/ETH price feed answer should be considered stale
+     */
+    function setStableEthChainLinkPriceFeed(
+        address newPriceFeedAddress,
+        uint256 newStalenessThreshold
+    ) internal {
+        UbiquityPoolStorage storage poolStorage = ubiquityPoolStorage();
+
+        poolStorage.stableEthPriceFeedAddress = newPriceFeedAddress;
+        poolStorage
+            .stableEthPriceFeedStalenessThreshold = newStalenessThreshold;
+
+        emit StableEthPriceFeedSet(newPriceFeedAddress, newStalenessThreshold);
     }
 
     /**
