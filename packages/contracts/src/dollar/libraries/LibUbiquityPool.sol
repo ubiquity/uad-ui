@@ -374,7 +374,12 @@ library LibUbiquityPool {
     }
 
     /**
-     * @notice Returns Ubiquity Dollar token USD price (1e6 precision) from Curve Metapool (Ubiquity Dollar, Curve Tri-Pool LP)
+     * @notice Returns Ubiquity Dollar token USD price (1e6 precision) from Curve plain pool (Stable coin, Ubiquity Dollar)
+     * How it works:
+     * 1. Fetch Stable/ETH quote from chainlink
+     * 2. Fetch ETH/USD quote from chainlink
+     * 3. Fetch Dollar/Stable quote from Curve's plain pool
+     * 4. Calculate Dollar token price in USD
      * @return dollarPriceUsd USD price of Ubiquity Dollar
      */
     function getDollarPriceUsd()
@@ -382,15 +387,59 @@ library LibUbiquityPool {
         view
         returns (uint256 dollarPriceUsd)
     {
-        // load storage shared across all libraries
         AppStorage storage store = LibAppStorage.appStorage();
-        // get Dollar price from Curve Metapool (18 decimals)
+        UbiquityPoolStorage storage poolStorage = ubiquityPoolStorage();
+
+        // fetch Stable/ETH quote from chainlink (18 decimals)
+        AggregatorV3Interface stableEthPriceFeed = AggregatorV3Interface(
+            poolStorage.stableEthPriceFeedAddress
+        );
+        (
+            ,
+            int256 stableEthAnswer,
+            ,
+            uint256 stableEthUpdatedAt,
+
+        ) = stableEthPriceFeed.latestRoundData();
+        uint256 stableEthPriceFeedDecimals = stableEthPriceFeed.decimals();
+        // validate Stable/ETH chainlink response
+        require(stableEthAnswer > 0, "Invalid Stable/ETH price");
+        require(
+            block.timestamp - stableEthUpdatedAt <
+                poolStorage.stableEthPriceFeedStalenessThreshold,
+            "Stale Stable/ETH data"
+        );
+
+        // fetch ETH/USD quote from chainlink (8 decimals)
+        AggregatorV3Interface ethUsdPriceFeed = AggregatorV3Interface(
+            poolStorage.ethUsdPriceFeedAddress
+        );
+        (, int256 ethUsdAnswer, , uint256 ethUsdUpdatedAt, ) = ethUsdPriceFeed
+            .latestRoundData();
+        uint256 ethUsdPriceFeedDecimals = ethUsdPriceFeed.decimals();
+        // validate ETH/USD chainlink response
+        require(ethUsdAnswer > 0, "Invalid ETH/USD price");
+        require(
+            block.timestamp - ethUsdUpdatedAt <
+                poolStorage.ethUsdPriceFeedStalenessThreshold,
+            "Stale ETH/USD data"
+        );
+
+        // calculate Stable/USD price
+        uint256 stablePriceUsdD18 = uint256(stableEthAnswer)
+            .mul(uint256(ethUsdAnswer))
+            .div(10 ** ethUsdPriceFeedDecimals);
+
+        // fetch Dollar/Stable quote from Curve's plain pool (18 decimals)
         uint256 dollarPriceUsdD18 = ICurveStableSwapNG(
-            store.stableSwapMetaPoolAddress
+            store.stableSwapPlainPoolAddress
         ).price_oracle(0);
+
         // convert to 6 decimals
         dollarPriceUsd = dollarPriceUsdD18
             .mul(UBIQUITY_POOL_PRICE_PRECISION)
+            .mul(stablePriceUsdD18)
+            .div(10 ** stableEthPriceFeedDecimals)
             .div(1e18);
     }
 

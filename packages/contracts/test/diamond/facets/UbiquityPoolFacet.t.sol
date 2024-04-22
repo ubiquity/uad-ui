@@ -7,7 +7,7 @@ import {IDollarAmoMinter} from "../../../src/dollar/interfaces/IDollarAmoMinter.
 import {LibUbiquityPool} from "../../../src/dollar/libraries/LibUbiquityPool.sol";
 import {MockChainLinkFeed} from "../../../src/dollar/mocks/MockChainLinkFeed.sol";
 import {MockERC20} from "../../../src/dollar/mocks/MockERC20.sol";
-import {MockCurveStableSwapMetaNG} from "../../../src/dollar/mocks/MockCurveStableSwapMetaNG.sol";
+import {MockCurveStableSwapNG} from "../../../src/dollar/mocks/MockCurveStableSwapNG.sol";
 import {MockCurveTwocryptoOptimized} from "../../../src/dollar/mocks/MockCurveTwocryptoOptimized.sol";
 
 contract MockDollarAmoMinter is IDollarAmoMinter {
@@ -24,9 +24,9 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
     MockDollarAmoMinter dollarAmoMinter;
     MockERC20 collateralToken;
     MockChainLinkFeed collateralTokenPriceFeed;
-    MockCurveStableSwapMetaNG curveDollarMetaPool;
+    MockCurveStableSwapNG curveDollarPlainPool;
     MockCurveTwocryptoOptimized curveGovernanceEthPool;
-    MockERC20 curveTriPoolLpToken;
+    MockERC20 stableToken;
     MockChainLinkFeed ethUsdPriceFeed;
     MockChainLinkFeed stableEthPriceFeed;
     MockERC20 wethToken;
@@ -86,13 +86,13 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         // init WETH token
         wethToken = new MockERC20("WETH", "WETH", 18);
 
-        // init Curve 3CRV-LP token
-        curveTriPoolLpToken = new MockERC20("3CRV", "3CRV", 18);
+        // init stable USD pegged token
+        stableToken = new MockERC20("STABLE", "STABLE", 18);
 
-        // init Curve Dollar-3CRV LP metapool
-        curveDollarMetaPool = new MockCurveStableSwapMetaNG(
-            address(dollarToken),
-            address(curveTriPoolLpToken)
+        // init Curve Stable-Dollar plain pool
+        curveDollarPlainPool = new MockCurveStableSwapNG(
+            address(stableToken),
+            address(dollarToken)
         );
 
         // init Curve Governance-WETH crypto pool
@@ -121,7 +121,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         // set ETH/USD price feed mock params
         ethUsdPriceFeed.updateMockParams(
             1, // round id
-            3000_00000000, // answer, 3000_00000000 = $3000 (8 decimals)
+            2000_00000000, // answer, 2000_00000000 = $2000 (8 decimals)
             block.timestamp, // started at
             block.timestamp, // updated at
             1 // answered in round
@@ -130,14 +130,15 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         // set stable/ETH price feed mock params
         stableEthPriceFeed.updateMockParams(
             1, // round id
-            330000000000000, // answer, 330000000000000 = 0.00033 ETH (18 decimals)
+            500000000000000, // answer, 500000000000000 = 0.0005 ETH (18 decimals)
             block.timestamp, // started at
             block.timestamp, // updated at
             1 // answered in round
         );
+        stableEthPriceFeed.updateDecimals(18);
 
-        // set ETH/Governance price to 30k in Curve pool mock
-        curveGovernanceEthPool.updateMockParams(30_000e18);
+        // set ETH/Governance price to 20k in Curve pool mock
+        curveGovernanceEthPool.updateMockParams(20_000e18);
 
         // set price feed for collateral token
         ubiquityPoolFacet.setCollateralChainLinkPriceFeed(
@@ -182,8 +183,10 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         // add AMO minter
         ubiquityPoolFacet.addAmoMinter(address(dollarAmoMinter));
 
-        // set metapool in manager facet
-        managerFacet.setStableSwapMetaPoolAddress(address(curveDollarMetaPool));
+        // set Curve plain pool in manager facet
+        managerFacet.setStableSwapPlainPoolAddress(
+            address(curveDollarPlainPool)
+        );
 
         // stop being admin
         vm.stopPrank();
@@ -348,6 +351,85 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         assertEq(amount, 100e18);
     }
 
+    function testGetDollarPriceUsd_ShouldRevertOnInvalidStableEthChainlinkAnswer()
+        public
+    {
+        // set invalid answer from chainlink
+        stableEthPriceFeed.updateMockParams(
+            1, // round id
+            0, // invalid answer
+            block.timestamp, // started at
+            block.timestamp, // updated at
+            1 // answered in round
+        );
+
+        vm.expectRevert("Invalid Stable/ETH price");
+        ubiquityPoolFacet.getDollarPriceUsd();
+    }
+
+    function testGetDollarPriceUsd_ShouldRevertStableEthChainlinkAnswerIsStale()
+        public
+    {
+        // set stale answer from chainlink
+        stableEthPriceFeed.updateMockParams(
+            1, // round id
+            100_000_000, // answer, 100_000_000 = $1.00
+            block.timestamp, // started at
+            block.timestamp, // updated at
+            1 // answered in round
+        );
+
+        // wait 1 day
+        vm.warp(block.timestamp + 1 days);
+
+        vm.expectRevert("Stale Stable/ETH data");
+        ubiquityPoolFacet.getDollarPriceUsd();
+    }
+
+    function testGetDollarPriceUsd_ShouldRevertOnInvalidEthUsdChainlinkAnswer()
+        public
+    {
+        // set invalid answer from chainlink
+        ethUsdPriceFeed.updateMockParams(
+            1, // round id
+            0, // invalid answer
+            block.timestamp, // started at
+            block.timestamp, // updated at
+            1 // answered in round
+        );
+
+        vm.expectRevert("Invalid ETH/USD price");
+        ubiquityPoolFacet.getDollarPriceUsd();
+    }
+
+    function testGetDollarPriceUsd_ShouldRevertEthUsdChainlinkAnswerIsStale()
+        public
+    {
+        // set Stable/ETH price to be up to date (1 day forward for ease of debugging)
+        stableEthPriceFeed.updateMockParams(
+            1, // round id
+            1, // answer
+            block.timestamp + 1 days, // started at
+            block.timestamp + 1 days, // updated at
+            1 // answered in round
+        );
+
+        // set stale answer from chainlink
+        ethUsdPriceFeed.updateMockParams(
+            1, // round id
+            1, // answer
+            block.timestamp, // started at
+            block.timestamp, // updated at
+            1 // answered in round
+        );
+
+        // wait 1 day
+        vm.warp(block.timestamp + 1 days);
+
+        vm.expectRevert("Stale ETH/USD data");
+        ubiquityPoolFacet.getDollarPriceUsd();
+    }
+
     function testGetDollarPriceUsd_ShouldReturnDollarPriceInUsd() public {
         uint256 dollarPriceUsd = ubiquityPoolFacet.getDollarPriceUsd();
         assertEq(dollarPriceUsd, 1_000_000);
@@ -392,9 +474,9 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         public
     {
         uint256 governancePriceUsd = ubiquityPoolFacet.getGovernancePriceUsd();
-        // 1 ETH = $3000, 1 ETH = 30_000 Governance tokens
-        // Governance token USD price = (1 / 30000) * 3000 = 0.1
-        assertEq(governancePriceUsd, 99999); // ~$0.09
+        // 1 ETH = $2000, 1 ETH = 20_000 Governance tokens
+        // Governance token USD price = (1 / 20000) * 2000 = 0.1
+        assertEq(governancePriceUsd, 100000); // $0.1
     }
 
     function testGetRedeemCollateralBalance_ShouldReturnRedeemCollateralBalance()
@@ -466,7 +548,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
 
         assertEq(
             ubiquityPoolFacet.getRedeemGovernanceBalance(user),
-            970209702097020970209
+            970200000000000000000
         );
     }
 
@@ -710,7 +792,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
 
         assertEq(totalDollarMint, 99e18);
         assertEq(collateralNeeded, 0);
-        assertEq(governanceNeeded, 1000010000100001000010); // ~1000.01 = 100 Dollar * $0.1 Governance from oracle
+        assertEq(governanceNeeded, 1000000000000000000000); // 1000 = 100 Dollar * $0.1 Governance from oracle
 
         // balances after
         assertEq(collateralToken.balanceOf(address(ubiquityPoolFacet)), 0);
@@ -750,7 +832,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
 
         assertEq(totalDollarMint, 99e18);
         assertEq(collateralNeeded, 95e18);
-        assertEq(governanceNeeded, 50000500005000050000); // ~50 Governance tokens = $5 USD / $0.1 Governance from oracle
+        assertEq(governanceNeeded, 50000000000000000000); // 50 Governance tokens = $5 USD / $0.1 Governance from oracle
 
         // balances after
         assertEq(collateralToken.balanceOf(address(ubiquityPoolFacet)), 95e18);
@@ -935,7 +1017,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
 
         // balances before
         assertEq(dollarToken.balanceOf(user), 99e18);
-        assertEq(governanceToken.balanceOf(user), 999989999899998999990);
+        assertEq(governanceToken.balanceOf(user), 1000000000000000000000);
         assertEq(governanceToken.balanceOf(address(ubiquityPoolFacet)), 0);
         assertEq(ubiquityPoolFacet.getRedeemCollateralBalance(user, 0), 0);
         assertEq(ubiquityPoolFacet.getRedeemGovernanceBalance(user), 0);
@@ -950,15 +1032,15 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
 
         // balances after
         assertEq(dollarToken.balanceOf(user), 0);
-        assertEq(governanceToken.balanceOf(user), 999989999899998999990);
+        assertEq(governanceToken.balanceOf(user), 1000000000000000000000);
         assertEq(
             governanceToken.balanceOf(address(ubiquityPoolFacet)),
-            970209702097020970209
+            970200000000000000000
         );
         assertEq(ubiquityPoolFacet.getRedeemCollateralBalance(user, 0), 0);
         assertEq(
             ubiquityPoolFacet.getRedeemGovernanceBalance(user),
-            970209702097020970209
+            970200000000000000000
         );
     }
 
@@ -988,7 +1070,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
 
         // balances before
         assertEq(dollarToken.balanceOf(user), 99e18);
-        assertEq(governanceToken.balanceOf(user), 1949999499994999950000); // ~1950
+        assertEq(governanceToken.balanceOf(user), 1950000000000000000000); // 1950
         assertEq(governanceToken.balanceOf(address(ubiquityPoolFacet)), 0);
         assertEq(ubiquityPoolFacet.getRedeemCollateralBalance(user, 0), 0);
         assertEq(ubiquityPoolFacet.getRedeemGovernanceBalance(user), 0);
@@ -1003,10 +1085,10 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
 
         // balances after
         assertEq(dollarToken.balanceOf(user), 0);
-        assertEq(governanceToken.balanceOf(user), 1949999499994999950000); // ~1950
+        assertEq(governanceToken.balanceOf(user), 1950000000000000000000); // 1950
         assertEq(
             governanceToken.balanceOf(address(ubiquityPoolFacet)),
-            48510485104851048510
+            48510000000000000000
         ); // ~48.5
         assertEq(
             ubiquityPoolFacet.getRedeemCollateralBalance(user, 0),
@@ -1014,7 +1096,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         ); // ~92
         assertEq(
             ubiquityPoolFacet.getRedeemGovernanceBalance(user),
-            48510485104851048510
+            48510000000000000000
         ); // ~48.5
     }
 
@@ -1075,14 +1157,14 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         assertEq(collateralToken.balanceOf(user), 5e18);
         assertEq(
             governanceToken.balanceOf(address(ubiquityPoolFacet)),
-            48510485104851048510
+            48510000000000000000
         ); // ~48
-        assertEq(governanceToken.balanceOf(user), 1949999499994999950000); // ~1950
+        assertEq(governanceToken.balanceOf(user), 1950000000000000000000); // ~1950
 
         vm.prank(user);
         (uint256 governanceAmount, uint256 collateralAmount) = ubiquityPoolFacet
             .collectRedemption(0);
-        assertEq(governanceAmount, 48510485104851048510); // ~48
+        assertEq(governanceAmount, 48510000000000000000); // ~48
         assertEq(collateralAmount, 92169000000000000000); // ~92 = $95 - 2% redemption fee
 
         // balances after
@@ -1092,7 +1174,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         ); // redemption fee left in the pool
         assertEq(collateralToken.balanceOf(user), 97.169 ether);
         assertEq(governanceToken.balanceOf(address(ubiquityPoolFacet)), 0);
-        assertEq(governanceToken.balanceOf(user), 1998509985099850998510); // ~1998
+        assertEq(governanceToken.balanceOf(user), 1998510000000000000000); // ~1998
     }
 
     function testCollectRedemption_ShouldRevert_IfCollateralDisabled() public {
