@@ -1,0 +1,60 @@
+{
+  "provider_token": "123",
+  "access_token": "123",
+  "refresh_token": "123",
+  "token_type": "bearer",
+  "user": {
+    "id": "1",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "octocat@github.com",
+    "email_confirmed_at": "2024-02-12T05:14:35.030647Z",
+    "phone": "",
+    "confirmed_at": "2024-02-12T05:14:35.030647Z",
+    "last_sign_in_at": "2024-02-26T05:05:04.909151Z",
+    "app_metadata": {
+      "provider": "github",
+      "providers": ["github"]
+    },
+    "user_metadata": {
+      "avatar_url": "https://github.com/images/error/octocat_happy.gif",
+      "email": "octocat@github.com",
+      "email_verified": true,
+      "full_name": "Octocat",
+      "iss": "https://api.github.com",
+      "name": "Octocat",
+      "phone_verified": false,
+      "preferred_username": "Octocat",
+      "provider_id": "1",
+      "sub": "1",
+      "user_name": "Octocat"
+    },
+    "identities": [
+      {
+        "identity_id": "1",
+        "id": "1",
+        "user_id": "1",
+        "identity_data": {
+          "avatar_url": "https://github.com/images/error/octocat_happy.gif",
+          "email": "octocat@github.com",
+          "email_verified": true,
+          "full_name": "Octocat",
+          "iss": "https://api.github.com",
+          "name": "Octocat",
+          "phone_verified": false,
+          "preferred_username": "Octocat",
+          "provider_id": "1",
+          "sub": "1",
+          "user_name": "Octocat"
+        },
+        "provider": "github",
+        "last_sign_in_at": "2024-02-12T05:14:35.023638Z",
+        "created_at": "2024-02-12T05:14:35.023688Z",
+        "updated_at": "2024-02-26T05:05:04.904114Z",
+        "email": "octocat@github.com"
+      }
+    ],
+    "created_at": "2024-02-12T05:14:35.020841Z",
+    "updated_at": "2024-02-26T05:05:04.917327Z"
+  }
+}

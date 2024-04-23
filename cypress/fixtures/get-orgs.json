@@ -1,0 +1,30 @@
+[
+  {
+    "login": "ubiquity2",
+    "id": 76412718,
+    "node_id": "MDEyOk9yZ2FuaXphdGlvbjc2NDEyNzE4",
+    "url": "https://api.github.com/orgs/ubiquity2",
+    "repos_url": "https://api.github.com/orgs/ubiquity2/repos",
+    "events_url": "https://api.github.com/orgs/ubiquity2/events",
+    "hooks_url": "https://api.github.com/orgs/ubiquity2/hooks",
+    "issues_url": "https://api.github.com/orgs/ubiquity2/issues",
+    "members_url": "https://api.github.com/orgs/ubiquity2/members{/member}",
+    "public_members_url": "https://api.github.com/orgs/ubiquity2/public_members{/member}",
+    "avatar_url": "https://avatars.githubusercontent.com/u/76412717?v=4",
+    "description": "The Metaverse Bank 2."
+  },
+  {
+    "login": "ubiquity",
+    "id": 76412717,
+    "node_id": "MDEyOk9yZ2FuaXphdGlvbjc2NDEyNzE3",
+    "url": "https://api.github.com/orgs/ubiquity",
+    "repos_url": "https://api.github.com/orgs/ubiquity/repos",
+    "events_url": "https://api.github.com/orgs/ubiquity/events",
+    "hooks_url": "https://api.github.com/orgs/ubiquity/hooks",
+    "issues_url": "https://api.github.com/orgs/ubiquity/issues",
+    "members_url": "https://api.github.com/orgs/ubiquity/members{/member}",
+    "public_members_url": "https://api.github.com/orgs/ubiquity/public_members{/member}",
+    "avatar_url": "https://avatars.githubusercontent.com/u/76412717?v=4",
+    "description": "The Metaverse Bank."
+  }
+]

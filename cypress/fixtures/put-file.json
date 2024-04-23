@@ -1,0 +1,52 @@
+{
+  "content": {
+    "name": "ubiquibot-config.yml",
+    "path": ".github/ubiquibot-config.yml",
+    "sha": "1778de0cb51522aa6a9c16e2c38ba2dfe3bc1a73",
+    "size": 3598,
+    "url": "https://api.github.com/repos/Ubiquity/ubiquibot-config/contents/.github/ubiquibot-config.yml?ref=main",
+    "html_url": "https://github.com/Ubiquity/ubiquibot-config/blob/main/.github/ubiquibot-config.yml",
+    "git_url": "https://api.github.com/repos/Ubiquity/ubiquibot-config/git/blobs/1778de0cb51522aa6a9c16e2c38ba2dfe3bc1a73",
+    "download_url": "https://raw.githubusercontent.com/Ubiquity/ubiquibot-config/main/.github/ubiquibot-config.yml?token=ACK2JIBIHVQCOZNR77YFVNLF47AFK",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/Ubiquity/ubiquibot-config/contents/.github/ubiquibot-config.yml?ref=main",
+      "git": "https://api.github.com/repos/Ubiquity/ubiquibot-config/git/blobs/1778de0cb51522aa6a9c16e2c38ba2dfe3bc1a73",
+      "html": "https://github.com/Ubiquity/ubiquibot-config/blob/main/.github/ubiquibot-config.yml"
+    }
+  },
+  "commit": {
+    "sha": "63937105dea81cda4f7eb8ef4c16b9f12d63a8ff",
+    "node_id": "C_kwDOLcQmP9oAKDYzOTM3MTA1ZGVhODFjZGE0ZjdlYjhlZjRjMTZiOWYxMmQ2M2E4ZmY",
+    "url": "https://api.github.com/repos/Ubiquity/ubiquibot-config/git/commits/63937105dea81cda4f7eb8ef4c16b9f12d63a8ff",
+    "html_url": "https://github.com/Ubiquity/ubiquibot-config/commit/63937105dea81cda4f7eb8ef4c16b9f12d63a8ff",
+    "author": {
+      "name": "Ubiquity",
+      "email": "ubiquity@users.noreply.github.com",
+      "date": "2024-03-06T01:00:09Z"
+    },
+    "committer": {
+      "name": "Ubiquity",
+      "email": "ubiquity@users.noreply.github.com",
+      "date": "2024-03-06T01:00:09Z"
+    },
+    "tree": {
+      "sha": "70bf542678602ebe2fb59c8d255665c0b443fe59",
+      "url": "https://api.github.com/repos/Ubiquity/ubiquibot-config/git/trees/70bf542678602ebe2fb59c8d255665c0b443fe59"
+    },
+    "message": "31c1b6ab-f534-43aa-9c02-c04955dadb4d",
+    "parents": [
+      {
+        "sha": "9313261f872b9af3b904fde7b63af158533e4998",
+        "url": "https://api.github.com/repos/Ubiquity/ubiquibot-config/git/commits/9313261f872b9af3b904fde7b63af158533e4998",
+        "html_url": "https://github.com/Ubiquity/ubiquibot-config/commit/9313261f872b9af3b904fde7b63af158533e4998"
+      }
+    ],
+    "verification": {
+      "verified": false,
+      "reason": "unsigned",
+      "signature": null,
+      "payload": null
+    }
+  }
+}

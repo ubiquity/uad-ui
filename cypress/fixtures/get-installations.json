@@ -1,0 +1,130 @@
+{
+  "total_count": 2,
+  "installations": [
+    {
+      "id": 47252474,
+      "account": {
+        "login": "Ubiquity",
+        "id": 159901852,
+        "node_id": "O_kgDOCYfonA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/159901852?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/Ubiquity",
+        "html_url": "https://github.com/Ubiquity",
+        "followers_url": "https://api.github.com/users/Ubiquity/followers",
+        "following_url": "https://api.github.com/users/Ubiquity/following{/other_user}",
+        "gists_url": "https://api.github.com/users/Ubiquity/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/Ubiquity/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/Ubiquity/subscriptions",
+        "organizations_url": "https://api.github.com/users/Ubiquity/orgs",
+        "repos_url": "https://api.github.com/users/Ubiquity/repos",
+        "events_url": "https://api.github.com/users/Ubiquity/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/Ubiquity/received_events",
+        "type": "Organization",
+        "site_admin": false
+      },
+      "repository_selection": "all",
+      "access_tokens_url": "https://api.github.com/app/installations/47252474/access_tokens",
+      "repositories_url": "https://api.github.com/installation/repositories",
+      "html_url": "https://github.com/organizations/Ubiquity/settings/installations/47252474",
+      "app_id": 236521,
+      "app_slug": "ubiquibot",
+      "target_id": 159901852,
+      "target_type": "Organization",
+      "permissions": {
+        "issues": "write",
+        "actions": "write",
+        "members": "read",
+        "contents": "write",
+        "metadata": "read",
+        "pull_requests": "write"
+      },
+      "events": [
+        "commit_comment",
+        "create",
+        "delete",
+        "fork",
+        "gollum",
+        "issues",
+        "issue_comment",
+        "label",
+        "member",
+        "membership",
+        "merge_queue_entry",
+        "milestone",
+        "organization",
+        "public",
+        "pull_request",
+        "pull_request_review",
+        "pull_request_review_comment",
+        "pull_request_review_thread",
+        "push",
+        "release",
+        "repository",
+        "repository_dispatch",
+        "star",
+        "team",
+        "team_add",
+        "watch",
+        "workflow_dispatch",
+        "workflow_job",
+        "workflow_run"
+      ],
+      "created_at": "2024-02-13T19:37:30.000+09:00",
+      "updated_at": "2024-02-13T19:37:31.000+09:00",
+      "single_file_name": null,
+      "has_multiple_single_files": false,
+      "single_file_paths": [
+
+      ],
+      "suspended_by": null,
+      "suspended_at": null
+    },
+    {
+      "id": 47255717,
+      "account": {
+        "login": "Ubiquity",
+        "id": 159901852,
+        "node_id": "O_kgDOCYfonA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/159901852?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/Ubiquity",
+        "html_url": "https://github.com/Ubiquity",
+        "followers_url": "https://api.github.com/users/Ubiquity/followers",
+        "following_url": "https://api.github.com/users/Ubiquity/following{/other_user}",
+        "gists_url": "https://api.github.com/users/Ubiquity/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/Ubiquity/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/Ubiquity/subscriptions",
+        "organizations_url": "https://api.github.com/users/Ubiquity/orgs",
+        "repos_url": "https://api.github.com/users/Ubiquity/repos",
+        "events_url": "https://api.github.com/users/Ubiquity/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/Ubiquity/received_events",
+        "type": "Organization",
+        "site_admin": false
+      },
+      "repository_selection": "selected",
+      "access_tokens_url": "https://api.github.com/app/installations/47255717/access_tokens",
+      "repositories_url": "https://api.github.com/installation/repositories",
+      "html_url": "https://github.com/organizations/Ubiquity/settings/installations/47255717",
+      "app_id": 827286,
+      "app_slug": "ubi",
+      "target_id": 159901852,
+      "target_type": "Organization",
+      "permissions": {
+
+      },
+      "events": [
+
+      ],
+      "created_at": "2024-02-13T21:12:10.000+09:00",
+      "updated_at": "2024-02-13T21:12:10.000+09:00",
+      "single_file_name": null,
+      "has_multiple_single_files": false,
+      "single_file_paths": [
+
+      ],
+      "suspended_by": null,
+      "suspended_at": null
+    }
+  ]
+}
