@@ -28,7 +28,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
     MockCurveTwocryptoOptimized curveGovernanceEthPool;
     MockERC20 stableToken;
     MockChainLinkFeed ethUsdPriceFeed;
-    MockChainLinkFeed stableEthPriceFeed;
+    MockChainLinkFeed stableUsdPriceFeed;
     MockERC20 wethToken;
 
     address user = address(1);
@@ -61,7 +61,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         uint256 newRedeemPriceThreshold
     );
     event RedemptionDelayBlocksSet(uint256 redemptionDelayBlocks);
-    event StableEthPriceFeedSet(
+    event StableUsdPriceFeedSet(
         address newPriceFeedAddress,
         uint256 newStalenessThreshold
     );
@@ -80,8 +80,8 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         // init ETH/USD price feed
         ethUsdPriceFeed = new MockChainLinkFeed();
 
-        // init stable/ETH price feed
-        stableEthPriceFeed = new MockChainLinkFeed();
+        // init stable/USD price feed
+        stableUsdPriceFeed = new MockChainLinkFeed();
 
         // init WETH token
         wethToken = new MockERC20("WETH", "WETH", 18);
@@ -127,15 +127,14 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
             1 // answered in round
         );
 
-        // set stable/ETH price feed mock params
-        stableEthPriceFeed.updateMockParams(
+        // set stable/USD price feed mock params
+        stableUsdPriceFeed.updateMockParams(
             1, // round id
-            500000000000000, // answer, 500000000000000 = 0.0005 ETH (18 decimals)
+            100_000_000, // answer, 100_000_000 = $1.00 (8 decimals)
             block.timestamp, // started at
             block.timestamp, // updated at
             1 // answered in round
         );
-        stableEthPriceFeed.updateDecimals(18);
 
         // set ETH/Governance price to 20k in Curve pool mock
         curveGovernanceEthPool.updateMockParams(20_000e18);
@@ -153,9 +152,9 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
             1 days // price feed staleness threshold in seconds
         );
 
-        // set price feed for stable/ETH pair
-        ubiquityPoolFacet.setStableEthChainLinkPriceFeed(
-            address(stableEthPriceFeed), // price feed address
+        // set price feed for stable/USD pair
+        ubiquityPoolFacet.setStableUsdChainLinkPriceFeed(
+            address(stableUsdPriceFeed), // price feed address
             1 days // price feed staleness threshold in seconds
         );
 
@@ -351,11 +350,11 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         assertEq(amount, 100e18);
     }
 
-    function testGetDollarPriceUsd_ShouldRevertOnInvalidStableEthChainlinkAnswer()
+    function testGetDollarPriceUsd_ShouldRevertOnInvalidStableUsdChainlinkAnswer()
         public
     {
         // set invalid answer from chainlink
-        stableEthPriceFeed.updateMockParams(
+        stableUsdPriceFeed.updateMockParams(
             1, // round id
             0, // invalid answer
             block.timestamp, // started at
@@ -363,15 +362,15 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
             1 // answered in round
         );
 
-        vm.expectRevert("Invalid Stable/ETH price");
+        vm.expectRevert("Invalid Stable/USD price");
         ubiquityPoolFacet.getDollarPriceUsd();
     }
 
-    function testGetDollarPriceUsd_ShouldRevertStableEthChainlinkAnswerIsStale()
+    function testGetDollarPriceUsd_ShouldRevertIfStableUsdChainlinkAnswerIsStale()
         public
     {
         // set stale answer from chainlink
-        stableEthPriceFeed.updateMockParams(
+        stableUsdPriceFeed.updateMockParams(
             1, // round id
             100_000_000, // answer, 100_000_000 = $1.00
             block.timestamp, // started at
@@ -382,51 +381,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         // wait 1 day
         vm.warp(block.timestamp + 1 days);
 
-        vm.expectRevert("Stale Stable/ETH data");
-        ubiquityPoolFacet.getDollarPriceUsd();
-    }
-
-    function testGetDollarPriceUsd_ShouldRevertOnInvalidEthUsdChainlinkAnswer()
-        public
-    {
-        // set invalid answer from chainlink
-        ethUsdPriceFeed.updateMockParams(
-            1, // round id
-            0, // invalid answer
-            block.timestamp, // started at
-            block.timestamp, // updated at
-            1 // answered in round
-        );
-
-        vm.expectRevert("Invalid ETH/USD price");
-        ubiquityPoolFacet.getDollarPriceUsd();
-    }
-
-    function testGetDollarPriceUsd_ShouldRevertEthUsdChainlinkAnswerIsStale()
-        public
-    {
-        // set Stable/ETH price to be up to date (1 day forward for ease of debugging)
-        stableEthPriceFeed.updateMockParams(
-            1, // round id
-            1, // answer
-            block.timestamp + 1 days, // started at
-            block.timestamp + 1 days, // updated at
-            1 // answered in round
-        );
-
-        // set stale answer from chainlink
-        ethUsdPriceFeed.updateMockParams(
-            1, // round id
-            1, // answer
-            block.timestamp, // started at
-            block.timestamp, // updated at
-            1 // answered in round
-        );
-
-        // wait 1 day
-        vm.warp(block.timestamp + 1 days);
-
-        vm.expectRevert("Stale ETH/USD data");
+        vm.expectRevert("Stale Stable/USD data");
         ubiquityPoolFacet.getDollarPriceUsd();
     }
 
@@ -560,12 +515,12 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         assertEq(governanceEthPoolAddress, address(curveGovernanceEthPool));
     }
 
-    function testStableEthPriceFeedInformation_ShouldReturnStableEthPriceFeedInformation()
+    function testStableUsdPriceFeedInformation_ShouldReturnStableUsdPriceFeedInformation()
         public
     {
         (address priceFeed, uint256 stalenessThreshold) = ubiquityPoolFacet
-            .stableEthPriceFeedInformation();
-        assertEq(priceFeed, address(stableEthPriceFeed));
+            .stableUsdPriceFeedInformation();
+        assertEq(priceFeed, address(stableUsdPriceFeed));
         assertEq(stalenessThreshold, 1 days);
     }
 
@@ -1623,7 +1578,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         vm.stopPrank();
     }
 
-    function testSetStableEthChainLinkPriceFeed_ShouldSetStableEthChainLinkPriceFeed()
+    function testSetStableUsdChainLinkPriceFeed_ShouldSetStableUsdChainLinkPriceFeed()
         public
     {
         vm.startPrank(admin);
@@ -1631,15 +1586,15 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         (
             address oldPriceFeedAddress,
             uint256 oldStalenessThreshold
-        ) = ubiquityPoolFacet.stableEthPriceFeedInformation();
-        assertEq(oldPriceFeedAddress, address(stableEthPriceFeed));
+        ) = ubiquityPoolFacet.stableUsdPriceFeedInformation();
+        assertEq(oldPriceFeedAddress, address(stableUsdPriceFeed));
         assertEq(oldStalenessThreshold, 1 days);
 
         address newPriceFeedAddress = address(1);
         uint256 newStalenessThreshold = 2 days;
         vm.expectEmit(address(ubiquityPoolFacet));
-        emit StableEthPriceFeedSet(newPriceFeedAddress, newStalenessThreshold);
-        ubiquityPoolFacet.setStableEthChainLinkPriceFeed(
+        emit StableUsdPriceFeedSet(newPriceFeedAddress, newStalenessThreshold);
+        ubiquityPoolFacet.setStableUsdChainLinkPriceFeed(
             newPriceFeedAddress,
             newStalenessThreshold
         );
@@ -1647,7 +1602,7 @@ contract UbiquityPoolFacetTest is DiamondTestSetup {
         (
             address updatedPriceFeedAddress,
             uint256 updatedStalenessThreshold
-        ) = ubiquityPoolFacet.stableEthPriceFeedInformation();
+        ) = ubiquityPoolFacet.stableUsdPriceFeedInformation();
         assertEq(updatedPriceFeedAddress, newPriceFeedAddress);
         assertEq(updatedStalenessThreshold, newStalenessThreshold);
 

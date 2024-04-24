@@ -106,10 +106,10 @@ library LibUbiquityPool {
         //================================
         // Dollar token pricing related
         //================================
-        // chainlink price feed for stable/ETH pair
-        address stableEthPriceFeedAddress;
-        // threshold in seconds when chainlink's stable/ETH price feed answer should be considered stale
-        uint256 stableEthPriceFeedStalenessThreshold;
+        // chainlink price feed for stable/USD pair
+        address stableUsdPriceFeedAddress;
+        // threshold in seconds when chainlink's stable/USD price feed answer should be considered stale
+        uint256 stableUsdPriceFeedStalenessThreshold;
     }
 
     /// @notice Struct used for detailed collateral information
@@ -189,8 +189,8 @@ library LibUbiquityPool {
     );
     /// @notice Emitted when a new redemption delay in blocks is set
     event RedemptionDelayBlocksSet(uint256 redemptionDelayBlocks);
-    /// @notice Emitted on setting chainlink's price feed for stable/ETH pair
-    event StableEthPriceFeedSet(
+    /// @notice Emitted on setting chainlink's price feed for stable/USD pair
+    event StableUsdPriceFeedSet(
         address newPriceFeedAddress,
         uint256 newStalenessThreshold
     );
@@ -376,10 +376,9 @@ library LibUbiquityPool {
     /**
      * @notice Returns Ubiquity Dollar token USD price (1e6 precision) from Curve plain pool (Stable coin, Ubiquity Dollar)
      * How it works:
-     * 1. Fetch Stable/ETH quote from chainlink
-     * 2. Fetch ETH/USD quote from chainlink
-     * 3. Fetch Dollar/Stable quote from Curve's plain pool
-     * 4. Calculate Dollar token price in USD
+     * 1. Fetch Stable/USD quote from chainlink
+     * 2. Fetch Dollar/Stable quote from Curve's plain pool
+     * 3. Calculate Dollar token price in USD
      * @return dollarPriceUsd USD price of Ubiquity Dollar
      */
     function getDollarPriceUsd()
@@ -390,45 +389,25 @@ library LibUbiquityPool {
         AppStorage storage store = LibAppStorage.appStorage();
         UbiquityPoolStorage storage poolStorage = ubiquityPoolStorage();
 
-        // fetch Stable/ETH quote from chainlink (18 decimals)
-        AggregatorV3Interface stableEthPriceFeed = AggregatorV3Interface(
-            poolStorage.stableEthPriceFeedAddress
+        // fetch Stable/USD quote from chainlink (8 decimals)
+        AggregatorV3Interface stableUsdPriceFeed = AggregatorV3Interface(
+            poolStorage.stableUsdPriceFeedAddress
         );
         (
             ,
-            int256 stableEthAnswer,
+            int256 stableUsdAnswer,
             ,
-            uint256 stableEthUpdatedAt,
+            uint256 stableUsdUpdatedAt,
 
-        ) = stableEthPriceFeed.latestRoundData();
-        uint256 stableEthPriceFeedDecimals = stableEthPriceFeed.decimals();
-        // validate Stable/ETH chainlink response
-        require(stableEthAnswer > 0, "Invalid Stable/ETH price");
+        ) = stableUsdPriceFeed.latestRoundData();
+        uint256 stableUsdPriceFeedDecimals = stableUsdPriceFeed.decimals();
+        // validate Stable/USD chainlink response
+        require(stableUsdAnswer > 0, "Invalid Stable/USD price");
         require(
-            block.timestamp - stableEthUpdatedAt <
-                poolStorage.stableEthPriceFeedStalenessThreshold,
-            "Stale Stable/ETH data"
+            block.timestamp - stableUsdUpdatedAt <
+                poolStorage.stableUsdPriceFeedStalenessThreshold,
+            "Stale Stable/USD data"
         );
-
-        // fetch ETH/USD quote from chainlink (8 decimals)
-        AggregatorV3Interface ethUsdPriceFeed = AggregatorV3Interface(
-            poolStorage.ethUsdPriceFeedAddress
-        );
-        (, int256 ethUsdAnswer, , uint256 ethUsdUpdatedAt, ) = ethUsdPriceFeed
-            .latestRoundData();
-        uint256 ethUsdPriceFeedDecimals = ethUsdPriceFeed.decimals();
-        // validate ETH/USD chainlink response
-        require(ethUsdAnswer > 0, "Invalid ETH/USD price");
-        require(
-            block.timestamp - ethUsdUpdatedAt <
-                poolStorage.ethUsdPriceFeedStalenessThreshold,
-            "Stale ETH/USD data"
-        );
-
-        // calculate Stable/USD price
-        uint256 stablePriceUsdD18 = uint256(stableEthAnswer)
-            .mul(uint256(ethUsdAnswer))
-            .div(10 ** ethUsdPriceFeedDecimals);
 
         // fetch Dollar/Stable quote from Curve's plain pool (18 decimals)
         uint256 dollarPriceUsdD18 = ICurveStableSwapNG(
@@ -438,8 +417,8 @@ library LibUbiquityPool {
         // convert to 6 decimals
         dollarPriceUsd = dollarPriceUsdD18
             .mul(UBIQUITY_POOL_PRICE_PRECISION)
-            .mul(stablePriceUsdD18)
-            .div(10 ** stableEthPriceFeedDecimals)
+            .mul(uint256(stableUsdAnswer))
+            .div(10 ** stableUsdPriceFeedDecimals)
             .div(1e18);
     }
 
@@ -529,19 +508,19 @@ library LibUbiquityPool {
     }
 
     /**
-     * @notice Returns chainlink price feed information for stable/ETH pair
+     * @notice Returns chainlink price feed information for stable/USD pair
      * @dev Here stable coin refers to the 1st coin in the Curve's stable/Dollar plain pool
      * @return Price feed address and staleness threshold in seconds
      */
-    function stableEthPriceFeedInformation()
+    function stableUsdPriceFeedInformation()
         internal
         view
         returns (address, uint256)
     {
         UbiquityPoolStorage storage poolStorage = ubiquityPoolStorage();
         return (
-            poolStorage.stableEthPriceFeedAddress,
-            poolStorage.stableEthPriceFeedStalenessThreshold
+            poolStorage.stableUsdPriceFeedAddress,
+            poolStorage.stableUsdPriceFeedStalenessThreshold
         );
     }
 
@@ -1203,21 +1182,22 @@ library LibUbiquityPool {
     }
 
     /**
-     * @notice Sets chainlink params for stable/ETH price feed
-     * @param newPriceFeedAddress New chainlink price feed address for stable/ETH pair
-     * @param newStalenessThreshold New threshold in seconds when chainlink's stable/ETH price feed answer should be considered stale
+     * @notice Sets chainlink params for stable/USD price feed
+     * @dev Here stable coin refers to the 1st coin in the Curve's stable/Dollar plain pool
+     * @param newPriceFeedAddress New chainlink price feed address for stable/USD pair
+     * @param newStalenessThreshold New threshold in seconds when chainlink's stable/USD price feed answer should be considered stale
      */
-    function setStableEthChainLinkPriceFeed(
+    function setStableUsdChainLinkPriceFeed(
         address newPriceFeedAddress,
         uint256 newStalenessThreshold
     ) internal {
         UbiquityPoolStorage storage poolStorage = ubiquityPoolStorage();
 
-        poolStorage.stableEthPriceFeedAddress = newPriceFeedAddress;
+        poolStorage.stableUsdPriceFeedAddress = newPriceFeedAddress;
         poolStorage
-            .stableEthPriceFeedStalenessThreshold = newStalenessThreshold;
+            .stableUsdPriceFeedStalenessThreshold = newStalenessThreshold;
 
-        emit StableEthPriceFeedSet(newPriceFeedAddress, newStalenessThreshold);
+        emit StableUsdPriceFeedSet(newPriceFeedAddress, newStalenessThreshold);
     }
 
     /**

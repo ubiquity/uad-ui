@@ -117,12 +117,12 @@ contract UbiquityPoolFacet is IUbiquityPool, Modifiers {
     }
 
     /// @inheritdoc IUbiquityPool
-    function stableEthPriceFeedInformation()
+    function stableUsdPriceFeedInformation()
         external
         view
         returns (address, uint256)
     {
-        return LibUbiquityPool.stableEthPriceFeedInformation();
+        return LibUbiquityPool.stableUsdPriceFeedInformation();
     }
 
     //====================
@@ -303,11 +303,11 @@ contract UbiquityPoolFacet is IUbiquityPool, Modifiers {
     }
 
     /// @inheritdoc IUbiquityPool
-    function setStableEthChainLinkPriceFeed(
+    function setStableUsdChainLinkPriceFeed(
         address newPriceFeedAddress,
         uint256 newStalenessThreshold
     ) external onlyAdmin {
-        LibUbiquityPool.setStableEthChainLinkPriceFeed(
+        LibUbiquityPool.setStableUsdChainLinkPriceFeed(
             newPriceFeedAddress,
             newStalenessThreshold
         );
