@@ -31,9 +31,7 @@ const Sidebar = () => {
             <li>
               <hr />
             </li>
-            <Item text="Staking" href="/staking" icon="⛏"></Item>
-            <Item text="Credits" href="/credits" icon="💸"></Item>
-            <Item text="Markets" href="/markets" icon="🔁"></Item>
+            <Item text="Pool" href="/pool" icon="💸"></Item>
           </ul>
 
           <ul>
