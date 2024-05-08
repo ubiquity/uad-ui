@@ -108,6 +108,9 @@ export const formatTimeDiff = (diff: number) => {
 
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+// Governance token address in mainnet
+export const GOVERNANCE_TOKEN_ADDRESS = "0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0";
+
 // Stable Coin Addresses
 export const USDC_ADDRESS = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
 export const DAI_ADDRESS = "0x6b175474e89094c44da98b954eedeac495271d0f";
@@ -121,10 +124,6 @@ export const CREDIT_USDT_ADDRESS = "0x9d498aB38Aa889AE0f4A865d30da2116ee9716bC";
 
 // Uniswap Router address
 export const V3_ROUTER_ADDRESS = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
-
-export const sushiSwapPoolAddress = "0x41e087485f47538752A1195D984109cB8Dc0E429";
-export const dollar3poolMarketAddress = "0x20955CB69Ae1515962177D164dfC9522feef567E";
-export const _3crvTokenAddress = "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490";
 
 export const safeParseEther = (val: string) => {
   try {

@@ -1,5 +1,5 @@
 import { JsonRpcProvider, JsonRpcSigner, Web3Provider } from "@ethersproject/providers";
-import { useAccount, useProvider, useSigner } from "wagmi";
+import { useAccount, useChainId, useProvider, useSigner } from "wagmi";
 import { WagmiConfig, createClient } from "wagmi";
 import { mainnet, localhost, foundry } from "wagmi/chains";
 import { WalletConnectConnector } from "wagmi/connectors/walletConnect";
@@ -23,6 +23,7 @@ export type Web3State = {
   provider: PossibleProviders;
   connecting: boolean;
   walletAddress: null | string;
+  chainId: number;
   signer?: JsonRpcSigner;
 };
 
@@ -102,6 +103,7 @@ const useWeb3 = (): Web3State => {
   const provider = useProvider();
   const { isConnecting, address } = useAccount();
   const { data: signer } = useSigner();
+  const chainId = useChainId();
 
   return {
     metamaskInstalled,
@@ -111,6 +113,7 @@ const useWeb3 = (): Web3State => {
     connecting: isConnecting,
     walletAddress: address as string,
     signer: signer as JsonRpcSigner,
+    chainId
   };
 };
 
