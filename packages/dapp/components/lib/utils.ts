@@ -108,9 +108,6 @@ export const formatTimeDiff = (diff: number) => {
 
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-// Governance token address in mainnet
-export const GOVERNANCE_TOKEN_ADDRESS = "0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0";
-
 // Stable Coin Addresses
 export const USDC_ADDRESS = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
 export const DAI_ADDRESS = "0x6b175474e89094c44da98b954eedeac495271d0f";

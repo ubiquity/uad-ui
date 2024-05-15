@@ -1,6 +1,6 @@
 import { Provider } from "@ethersproject/providers";
 import { Contract, ethers } from "ethers";
-import { GOVERNANCE_TOKEN_ADDRESS } from "../../utils";
+import { useEffect, useState } from "react";
 import useWeb3 from "../use-web-3";
 
 // contract build artifacts
@@ -12,6 +12,8 @@ import AccessControlFacetArtifact from "@ubiquity/contracts/out/AccessControlFac
 import ManagerFacetArtifact from "@ubiquity/contracts/out/ManagerFacet.sol/ManagerFacet.json";
 import OwnershipFacetArtifact from "@ubiquity/contracts/out/OwnershipFacet.sol/OwnershipFacet.json";
 import UbiquityPoolFacetArtifact from "@ubiquity/contracts/out/UbiquityPoolFacet.sol/UbiquityPoolFacet.json";
+// misc
+import AggregatorV3InterfaceArtifact from "@ubiquity/contracts/out/AggregatorV3Interface.sol/AggregatorV3Interface.json";
 
 type DeploymentTransaction = {
   transactionType: string,
@@ -29,6 +31,8 @@ export type ProtocolContracts = {
   managerFacet: Contract | null;
   ownershipFacet: Contract | null;
   ubiquityPoolFacet: Contract | null;
+  // misc
+  chainlinkPriceFeedLusdUsd: Contract | null;
 };
 
 /**
@@ -42,8 +46,10 @@ const useProtocolContracts = () => {
   // get current web3 provider
   const { chainId, provider } = useWeb3();
 
-  // all protocol contracts
-  const protocolContracts: ProtocolContracts = {
+  // set protocol as not yet initialized
+  const [isProtocolInitialized, setIsProtocolInitialized] = useState(false);
+
+  const [protocolContracts, setProtocolContracts] = useState<ProtocolContracts>({
     // separately deployed contracts (i.e. not part of the diamond)
     dollarToken: null,
     governanceToken: null,
@@ -52,78 +58,64 @@ const useProtocolContracts = () => {
     managerFacet: null,
     ownershipFacet: null,
     ubiquityPoolFacet: null,
-  };
-
-  let diamondAddress = "";
-
-  // By default set `UbiquityGovernance` token contract to already deployed on mainnet address.
-  // If there is some mock instance (for testnet/anvil) then it will be overridden later in the code.
-  protocolContracts.governanceToken = new ethers.Contract(GOVERNANCE_TOKEN_ADDRESS, UbiquityGovernanceArtifact.abi, <Provider>provider);
+    // misc
+    chainlinkPriceFeedLusdUsd: null,
+  });
 
   // get deployment transactions from all migrations
   const deploymentTransactions = getDeploymentTransactions(chainId);
 
-  // for all of the deployment transactions
+  // find Diamond address in all of the deployment transactions
+  let diamondAddress = "";
   deploymentTransactions.map((tx: DeploymentTransaction) => {
     if (tx.transactionType === "CREATE") {
-      // get `UbiquityDollarToken` contract instance (deployed separately, not part of the diamond)
-      if (tx.contractName === "UbiquityDollarToken") {
-        protocolContracts.dollarToken = new ethers.Contract(
-          getContractProxyAddress(tx.contractAddress, deploymentTransactions), 
-          UbiquityDollarTokenArtifact.abi, 
-          <Provider>provider
-        );
-      }
-      // get `UbiquityGovernance` token contract instance (for mainnet use already deployed contract, for testnet/anvil mock is used)
-      if (tx.contractName === "UbiquityGovernance") {
-        protocolContracts.governanceToken = new ethers.Contract(tx.contractAddress, UbiquityGovernanceArtifact.abi, <Provider>provider);
-      }
       // find the diamond address
       if (tx.contractName === "Diamond") diamondAddress = tx.contractAddress;
     }
   });
 
-  // assign diamond facets
-  protocolContracts.accessControlFacet = new ethers.Contract(diamondAddress, AccessControlFacetArtifact.abi, <Provider>provider);
-  protocolContracts.managerFacet = new ethers.Contract(diamondAddress, ManagerFacetArtifact.abi, <Provider>provider);
-  protocolContracts.ownershipFacet = new ethers.Contract(diamondAddress, OwnershipFacetArtifact.abi, <Provider>provider);
-  protocolContracts.ubiquityPoolFacet = new ethers.Contract(diamondAddress, UbiquityPoolFacetArtifact.abi, <Provider>provider);
+  // fetch contracts instances from ManagerFacet
+  useEffect(() => {
+    const fetchContractInstances = async () => {
+      // set diamond facets
+      const accessControlFacet = new ethers.Contract(diamondAddress, AccessControlFacetArtifact.abi, <Provider>provider);
+      const managerFacet = new ethers.Contract(diamondAddress, ManagerFacetArtifact.abi, <Provider>provider);
+      const ownershipFacet = new ethers.Contract(diamondAddress, OwnershipFacetArtifact.abi, <Provider>provider);
+      const ubiquityPoolFacet = new ethers.Contract(diamondAddress, UbiquityPoolFacetArtifact.abi, <Provider>provider);
+      
+      // set core contracts
+      const dollarToken = new ethers.Contract(await managerFacet.dollarTokenAddress(), UbiquityDollarTokenArtifact.abi, <Provider>provider);
+      const governanceToken = new ethers.Contract(await managerFacet.governanceTokenAddress(), UbiquityGovernanceArtifact.abi, <Provider>provider);
 
-  return protocolContracts;
+      // set misc contracts
+      const [chainlinkPriceFeedLusdUsdAddress] = await ubiquityPoolFacet.stableUsdPriceFeedInformation();
+      const chainlinkPriceFeedLusdUsd = new ethers.Contract(chainlinkPriceFeedLusdUsdAddress, AggregatorV3InterfaceArtifact.abi, <Provider>provider);
+
+      // update UI
+      setProtocolContracts({
+        // diamond facets
+        accessControlFacet,
+        managerFacet,
+        ownershipFacet,
+        ubiquityPoolFacet,
+        // separately deployed core contracts (i.e. not part of the diamond)
+        dollarToken,
+        governanceToken,
+        // misc
+        chainlinkPriceFeedLusdUsd,
+      });
+      setIsProtocolInitialized(true);
+    };
+
+    fetchContractInstances();
+  }, []);
+
+  return [isProtocolInitialized, protocolContracts];
 };
 
 /**
  * Helper methods
  */
-
-/**
- * Returns ERC1967Proxy address (which should be used in the frontend) by contract implementation address
- * @param contractImplementationAddress Contract implementation address
- * @param deploymentTransactions Deployment transactions
- * @returns Proxy address
- */
-function getContractProxyAddress(
-  contractImplementationAddress: string,
-  deploymentTransactions: DeploymentTransaction[],
-) {
-  let contractProxyAddress = '';
-
-  for (let i = 0; i < deploymentTransactions.length; i++) {
-    if (deploymentTransactions[i].transactionType === 'CREATE' && deploymentTransactions[i].contractName === 'ERC1967Proxy') {
-      // get implementation address from constructor arguments `new ERC1967Proxy(implementationAddress,initPayload);`
-      const txImplementationAddress = deploymentTransactions[i].arguments[0];
-      // if fetched implemetation address equals to `contractImplementationAddress` then we found correct proxy contract
-      if (txImplementationAddress.toLowerCase() === contractImplementationAddress.toLowerCase()) {
-        contractProxyAddress = deploymentTransactions[i].contractAddress;
-        break;
-      }
-    }
-  }
-
-  if (contractProxyAddress === '') throw new Error(`Contract proxy address not found for implementation ${contractImplementationAddress}`);
-
-  return contractProxyAddress;
-}
 
 /**
  * Returns all deployment transactions (from all migrations)
