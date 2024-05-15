@@ -14,6 +14,7 @@ import OwnershipFacetArtifact from "@ubiquity/contracts/out/OwnershipFacet.sol/O
 import UbiquityPoolFacetArtifact from "@ubiquity/contracts/out/UbiquityPoolFacet.sol/UbiquityPoolFacet.json";
 // misc
 import AggregatorV3InterfaceArtifact from "@ubiquity/contracts/out/AggregatorV3Interface.sol/AggregatorV3Interface.json";
+import CurveStableSwapNGArtifact from "../../../config/abis/curve-stable-swap-ng.json";
 
 type DeploymentTransaction = {
   transactionType: string,
@@ -33,6 +34,7 @@ export type ProtocolContracts = {
   ubiquityPoolFacet: Contract | null;
   // misc
   chainlinkPriceFeedLusdUsd: Contract | null;
+  curveLusdDollarPool: Contract | null;
 };
 
 /**
@@ -60,6 +62,7 @@ const useProtocolContracts = () => {
     ubiquityPoolFacet: null,
     // misc
     chainlinkPriceFeedLusdUsd: null,
+    curveLusdDollarPool: null,
   });
 
   // get deployment transactions from all migrations
@@ -90,6 +93,7 @@ const useProtocolContracts = () => {
       // set misc contracts
       const [chainlinkPriceFeedLusdUsdAddress] = await ubiquityPoolFacet.stableUsdPriceFeedInformation();
       const chainlinkPriceFeedLusdUsd = new ethers.Contract(chainlinkPriceFeedLusdUsdAddress, AggregatorV3InterfaceArtifact.abi, <Provider>provider);
+      const curveLusdDollarPool = new ethers.Contract(await managerFacet.stableSwapPlainPoolAddress(), CurveStableSwapNGArtifact, <Provider>provider);
 
       // update UI
       setProtocolContracts({
@@ -103,6 +107,7 @@ const useProtocolContracts = () => {
         governanceToken,
         // misc
         chainlinkPriceFeedLusdUsd,
+        curveLusdDollarPool,
       });
       setIsProtocolInitialized(true);
     };

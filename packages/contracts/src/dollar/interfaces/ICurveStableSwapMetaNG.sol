@@ -85,6 +85,20 @@ interface ICurveStableSwapMetaNG is IERC20 {
     ) external returns (uint256);
 
     /**
+     * @notice Function to calculate the predicted output amount of token `j` to receive at the pool's 
+     * current state given an input of `dx` amount of coin `i`.
+     * @param i Index value of input coin
+     * @param j Index value of output coin
+     * @param dx Amount of input coin being exchanged
+     * @return Predicted output amount of j
+     */
+    function get_dy(
+        int128 i,
+        int128 j,
+        uint256 dx
+    ) external returns (uint256);
+
+    /**
      * @notice Function to calculate the exponential moving average (ema) price for the coin at index value `i`
      * @param i Index value of coin
      * @return Price oracle
