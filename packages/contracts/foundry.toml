@@ -43,3 +43,12 @@ src = 'src/dollar'
 [profile.intense.fuzz]
 runs = 100000
 max_test_rejects = 900000
+
+[profile.invariant]
+runs = 1000
+depth = 25
+fail_on_revert = false
+call_override = false
+dictionary_weight = 80
+include_storage = true
+include_push_bytes = true
