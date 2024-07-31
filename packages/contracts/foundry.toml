@@ -44,5 +44,3 @@ src = 'src/dollar'
 runs = 100000
 max_test_rejects = 900000
 
-[lint]
-foundry-test-functions = false
