@@ -7,6 +7,9 @@ import "./IERC20Ubiquity.sol";
  * @notice Ubiquity Dollar token interface
  */
 interface IUbiquityDollarToken is IERC20Ubiquity {
+    function pause() external;
+    function unpause() external;
+
     /// @notice Emitted on setting an incentive contract for an account
     event IncentiveContractUpdate(
         address indexed _incentivized,

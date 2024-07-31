@@ -47,6 +47,16 @@ contract UbiquityPoolFacet is IUbiquityPool, Modifiers {
     }
 
     /// @inheritdoc IUbiquityPool
+    function pause() external onlyAdmin {
+        LibUbiquityPool.pause();
+    }
+
+    /// @inheritdoc IUbiquityPool
+    function unpause() external onlyAdmin {
+        LibUbiquityPool.unpause();
+    }
+
+    /// @inheritdoc IUbiquityPool
     function ethUsdPriceFeedInformation()
         external
         view
