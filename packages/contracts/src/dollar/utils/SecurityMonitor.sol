@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "lib/chainlink-brownie-contracts/contracts/src/v0.8/vrf/AutomationCompatible.sol";
+import "../../../lib/chainlink-brownie-contracts/contracts/src/v0.8/vrf/AutomationCompatible.sol";
 
 contract SecurityMonitor is AccessControl, AutomationCompatibleInterface {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
