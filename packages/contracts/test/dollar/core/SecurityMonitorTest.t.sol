@@ -1,75 +1,161 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
 import "forge-std/Test.sol";
 import "../../../src/dollar/utils/SecurityMonitor.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+// Mock ERC20 token contract for testing
+contract MockERC20 is ERC20 {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+}
+
+// Mock Price Oracle contract for testing
+contract MockPriceOracle {
+    int256 private price;
+
+    function setPrice(int256 _price) external {
+        price = _price;
+    }
+
+    function latestRoundData()
+        external
+        view
+        returns (uint80, int256, uint256, uint256, uint80)
+    {
+        return (0, price, 0, 0, 0);
+    }
+}
+
+// Mock Pausable contract for testing
+contract MockPausableContract is Pausable {
+    function pause() external {
+        _pause();
+    }
+
+    function unpause() external {
+        _unpause();
+    }
+}
 
 contract SecurityMonitorTest is Test {
     SecurityMonitor securityMonitor;
+    MockERC20 mockToken;
+    MockPriceOracle mockPriceOracle;
+    MockPausableContract mockPausableContract;
+
     event SecurityIncident(string message);
 
-    address admin = address(this);
-
     function setUp() public {
-        // Deploy the SecurityMonitor contract with this contract as the admin
-        securityMonitor = new SecurityMonitor(admin, 30);
+        mockToken = new MockERC20("MockToken", "MTK");
+        mockPriceOracle = new MockPriceOracle();
+        mockPausableContract = new MockPausableContract();
 
-        // Ensure this contract has the DEFAULT_ADMIN_ROLE
-        assertTrue(
-            securityMonitor.hasRole(securityMonitor.DEFAULT_ADMIN_ROLE(), admin)
+        securityMonitor = new SecurityMonitor(
+            address(this),
+            1000 * 10 ** 18,
+            address(this),
+            address(mockToken),
+            address(mockPriceOracle)
         );
 
-        // Grant PAUSER_ROLE to this contract
-        vm.prank(admin);
-        securityMonitor.grantRole(securityMonitor.PAUSER_ROLE(), admin);
-
-        // Ensure this contract has the PAUSER_ROLE
-        assertTrue(
-            securityMonitor.hasRole(securityMonitor.PAUSER_ROLE(), admin)
-        );
+        securityMonitor.grantRole(securityMonitor.PAUSER_ROLE(), address(this));
+        securityMonitor.addPausableContract(address(mockPausableContract));
     }
 
     function testPauseAllContracts() public {
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(false, false, false, true);
         emit SecurityIncident(
             "All contracts paused due to a security incident."
         );
-        vm.prank(admin);
+
         securityMonitor.pauseAllContracts();
-        assertEq(securityMonitor.lastCheckBlock(), block.number);
+        assertTrue(mockPausableContract.paused());
     }
 
     function testNotifyTeam() public {
         string memory incidentMessage = "Test incident";
-        vm.expectEmit(true, true, true, true);
+
+        vm.expectEmit(false, false, false, true);
         emit SecurityIncident(incidentMessage);
-        vm.prank(admin);
+
         securityMonitor.notifyTeam(incidentMessage);
     }
 
-    function testCheckUpkeep() public {
-        (bool upkeepNeeded, ) = securityMonitor.checkUpkeep("");
-        assertFalse(upkeepNeeded);
+    function testCheckLiquidity() public {
+        // Get the liquidity pool address
+        address liquidityPool = securityMonitor.liquidityPool();
+
+        // Mint tokens to the liquidity pool
+        mockToken.mint(liquidityPool, 2000 * 10 ** 18);
+        mockPriceOracle.setPrice(1 * 10 ** 18);
+
+        // Liquidity should be above threshold (2000 > 1000)
+        assertFalse(
+            securityMonitor.checkLiquidity(),
+            "Liquidity should be above threshold"
+        );
+
+        // Set price to 0.4, making liquidity fall below threshold (2000 * 0.4 = 800 < 1000)
+        mockPriceOracle.setPrice(4 * 10 ** 17);
+
+        // Liquidity should now be below threshold
+        assertTrue(
+            securityMonitor.checkLiquidity(),
+            "Liquidity should be below threshold"
+        );
+
+        // Mint more tokens to bring liquidity above threshold again
+        mockToken.mint(liquidityPool, 3000 * 10 ** 18);
+
+        // Liquidity should now be above threshold (5000 * 0.4 = 2000 > 1000)
+        assertFalse(
+            securityMonitor.checkLiquidity(),
+            "Liquidity should be above threshold after minting more tokens"
+        );
     }
 
     function testPerformUpkeep() public {
-        // First, check if upkeep is needed
-        (bool upkeepNeeded, ) = securityMonitor.checkUpkeep("");
+        mockToken.mint(address(this), 500 * 10 ** 18);
+        mockPriceOracle.setPrice(4 * 10 ** 17);
 
-        if (upkeepNeeded) {
-            // If upkeep is needed, expect the security incident event
-            vm.expectEmit(true, true, true, true);
-            emit SecurityIncident(
-                "Security incident detected: Liquidity threshold breached. Contracts paused."
-            );
+        vm.roll(block.number + 100);
 
-            securityMonitor.performUpkeep("");
+        vm.expectEmit(false, false, false, true);
+        emit SecurityIncident(
+            "Security incident detected: Liquidity threshold breached. Contracts paused."
+        );
 
-            assertEq(securityMonitor.lastCheckBlock(), block.number);
-        } else {
-            // If upkeep is not needed, we should not expect any events
-            // Just perform the upkeep and check that lastCheckBlock is updated
-            securityMonitor.performUpkeep("");
-            assertEq(securityMonitor.lastCheckBlock(), block.number);
-        }
+        securityMonitor.performUpkeep("");
+        assertTrue(securityMonitor.paused());
+    }
+
+    function testAddAndRemovePausableContracts() public {
+        address newContract = address(0x123);
+
+        securityMonitor.addPausableContract(newContract);
+        (address[] memory contracts, bool[] memory statuses) = securityMonitor
+            .getContractsPauseStatus();
+        assertEq(contracts[contracts.length - 1], newContract);
+        assertTrue(statuses[statuses.length - 1]);
+
+        securityMonitor.removePausableContract(newContract);
+        (contracts, statuses) = securityMonitor.getContractsPauseStatus();
+        assertTrue(contracts.length == 1);
+    }
+
+    function testUpdateLiquidityThreshold() public {
+        securityMonitor.updateLiquidityThreshold(2000 * 10 ** 18);
+        assertEq(securityMonitor.liquidityThreshold(), 2000 * 10 ** 18);
+    }
+
+    function testUpdateLiquidityPool() public {
+        address newPool = address(0x123);
+        securityMonitor.updateLiquidityPool(newPool);
+        assertEq(securityMonitor.liquidityPool(), newPool);
     }
 }
