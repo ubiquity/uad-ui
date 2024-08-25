@@ -7,10 +7,29 @@ import {LibUbiquityPool} from "../../../../src/dollar/libraries/LibUbiquityPool.
 import {MockERC20} from "../../../../src/dollar/mocks/MockERC20.sol";
 import {DiamondTestSetup} from "../../../../test/diamond/DiamondTestSetup.sol";
 import {MockChainLinkFeed} from "../../../../src/dollar/mocks/MockChainLinkFeed.sol";
+import {PoolFacetHandler} from "./PoolFacetHandler.sol";
+import {IERC20Ubiquity} from "../../../../src/dollar/interfaces/IERC20Ubiquity.sol";
+import {MockCurveStableSwapNG} from "../../../../src/dollar/mocks/MockCurveStableSwapNG.sol";
+import {MockCurveTwocryptoOptimized} from "../../../../src/dollar/mocks/MockCurveTwocryptoOptimized.sol";
 
 contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
-    MockERC20 public collateralToken;
-    MockChainLinkFeed public collateralTokenPriceFeed;
+    PoolFacetHandler handler;
+
+    // mock three tokens: collateral token, stable token, wrapped ETH token
+    MockERC20 collateralToken;
+    MockERC20 stableToken;
+    MockERC20 wethToken;
+
+    // mock three ChainLink price feeds, one for each token
+    MockChainLinkFeed collateralTokenPriceFeed;
+    MockChainLinkFeed ethUsdPriceFeed;
+    MockChainLinkFeed stableUsdPriceFeed;
+
+    // mock two curve pools Stablecoin/Dollar and Governance/WETH
+    MockCurveStableSwapNG curveDollarPlainPool;
+    MockCurveTwocryptoOptimized curveGovernanceEthPool;
+
+    address user = address(1);
 
     function setUp() public override {
         super.setUp();
@@ -18,7 +37,22 @@ contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
         vm.startPrank(admin);
 
         collateralToken = new MockERC20("COLLATERAL", "CLT", 18);
+        wethToken = new MockERC20("WETH", "WETH", 18);
+        stableToken = new MockERC20("STABLE", "STABLE", 18);
+
         collateralTokenPriceFeed = new MockChainLinkFeed();
+        ethUsdPriceFeed = new MockChainLinkFeed();
+        stableUsdPriceFeed = new MockChainLinkFeed();
+
+        curveDollarPlainPool = new MockCurveStableSwapNG(
+            address(stableToken),
+            address(dollarToken)
+        );
+
+        curveGovernanceEthPool = new MockCurveTwocryptoOptimized(
+            address(governanceToken),
+            address(wethToken)
+        );
 
         // add collateral token to the pool
         uint256 poolCeiling = 50_000e18; // max 50_000 of collateral tokens is allowed
@@ -37,6 +71,27 @@ contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
             1 // answered in round
         );
 
+        // set ETH/USD price initial feed mock params
+        ethUsdPriceFeed.updateMockParams(
+            1, // round id
+            2000_00000000, // answer, 2000_00000000 = $2000 (8 decimals)
+            block.timestamp, // started at
+            block.timestamp, // updated at
+            1 // answered in round
+        );
+
+        // set stable/USD price feed initial mock params
+        stableUsdPriceFeed.updateMockParams(
+            1, // round id
+            100_000_000, // answer, 100_000_000 = $1.00 (8 decimals)
+            block.timestamp, // started at
+            block.timestamp, // updated at
+            1 // answered in round
+        );
+
+        // set ETH/Governance initial price to 20k in Curve pool mock (20k GOV == 1 ETH)
+        curveGovernanceEthPool.updateMockParams(20_000e18);
+
         // set price feed for collateral token
         ubiquityPoolFacet.setCollateralChainLinkPriceFeed(
             address(collateralToken), // collateral token address
@@ -44,48 +99,110 @@ contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
             1 days // price feed staleness threshold in seconds
         );
 
+        // set price feed for ETH/USD pair
+        ubiquityPoolFacet.setEthUsdChainLinkPriceFeed(
+            address(ethUsdPriceFeed), // price feed address
+            1 days // price feed staleness threshold in seconds
+        );
+
+        // set price feed for stable/USD pair
+        ubiquityPoolFacet.setStableUsdChainLinkPriceFeed(
+            address(stableUsdPriceFeed), // price feed address
+            1 days // price feed staleness threshold in seconds
+        );
+
+        // enable collateral at index 0
         ubiquityPoolFacet.toggleCollateral(0);
+        // set mint and redeem initial fees
+        ubiquityPoolFacet.setFees(
+            0, // collateral index
+            10000, // 1% mint fee
+            20000 // 2% redeem fee
+        );
+        // set redemption delay to 2 blocks
+        ubiquityPoolFacet.setRedemptionDelayBlocks(2);
+        // set mint price threshold to $1.01 and redeem price to $0.99
+        ubiquityPoolFacet.setPriceThresholds(1010000, 990000);
+        // set collateral ratio to 100%
+        ubiquityPoolFacet.setCollateralRatio(1_000_000);
+        // set Governance-ETH pool
+        ubiquityPoolFacet.setGovernanceEthPoolAddress(
+            address(curveGovernanceEthPool)
+        );
 
+        // set Curve plain pool in manager facet
+        managerFacet.setStableSwapPlainPoolAddress(
+            address(curveDollarPlainPool)
+        );
+
+        // stop being admin
         vm.stopPrank();
+
+        // mint 2000 Governance tokens to the user
+        deal(address(governanceToken), user, 2000e18);
+        // mint 2000 collateral tokens to the user
+        collateralToken.mint(address(user), 2000e18);
+        // user approves the pool to transfer collateral
+        vm.prank(user);
+        collateralToken.approve(address(ubiquityPoolFacet), 100e18);
+
+        handler = new PoolFacetHandler(
+            collateralTokenPriceFeed,
+            ubiquityPoolFacet
+        );
+        targetContract(address(handler));
     }
 
-    function invariant_CollateralTokenIsEnabledAndCorrectlyAdded() public {
-        // Check if the collateral token is correctly added and enabled
+    function invariant_PoolCollateralBalanceIsConsistent() public {
+        uint256 expectedBalance = 0;
+
+        for (
+            uint256 i = 0;
+            i < ubiquityPoolFacet.allCollaterals().length;
+            i++
+        ) {
+            address collateralAddress = ubiquityPoolFacet.allCollaterals()[i];
+            uint256 collateralBalance = MockERC20(collateralAddress).balanceOf(
+                address(ubiquityPoolFacet)
+            );
+
+            expectedBalance += collateralBalance;
+        }
+
+        uint256 actualBalance = ubiquityPoolFacet.collateralUsdBalance();
+
+        assertEq(expectedBalance, actualBalance, "Collateral balance mismatch");
+    }
+
+    function invariant_CannotMintMoreDollarsThanCollateral() public {
+        uint256 fuzzedDollarPriceUsd = uint256(
+            bound(
+                uint256(keccak256(abi.encodePacked(block.timestamp))),
+                90_000_000,
+                110_000_000
+            )
+        );
+
         LibUbiquityPool.CollateralInformation
             memory collateralInfo = ubiquityPoolFacet.collateralInformation(
                 address(collateralToken)
             );
+
+        uint256 collateralBalance = ubiquityPoolFacet.freeCollateralBalance(0);
+        uint256 collateralPrice = collateralInfo.price;
+
+        uint256 totalCollateralValue = collateralBalance * collateralPrice;
+
+        uint256 totalDollarSupply = IERC20Ubiquity(
+            managerFacet.dollarTokenAddress()
+        ).totalSupply();
+
+        // uint256 dollarPrice = ubiquityPoolFacet.getDollarPriceUsd();
+        uint256 totalDollarValue = totalDollarSupply * fuzzedDollarPriceUsd;
+
         assertTrue(
-            collateralInfo.isEnabled,
-            "Collateral token should be enabled"
-        );
-        assertEq(
-            collateralInfo.collateralAddress,
-            address(collateralToken),
-            "Collateral token address mismatch"
-        );
-        assertEq(
-            collateralInfo.poolCeiling,
-            50_000e18,
-            "Collateral pool ceiling mismatch"
-        );
-    }
-
-    function invariant_CollateralPriceFeedIsSetCorrectly() public {
-        // Check if the price feed for the collateral token is set correctly
-        LibUbiquityPool.CollateralInformation
-            memory collateralInfo = ubiquityPoolFacet.collateralInformation(
-                address(collateralToken)
-            );
-        assertEq(
-            collateralInfo.collateralPriceFeedAddress,
-            address(collateralTokenPriceFeed),
-            "Collateral price feed address mismatch"
-        );
-        assertEq(
-            collateralInfo.collateralPriceFeedStalenessThreshold,
-            1 days,
-            "Collateral price feed staleness threshold mismatch"
+            totalDollarValue <= totalCollateralValue,
+            "Minted dollars exceed collateral value"
         );
     }
 }
