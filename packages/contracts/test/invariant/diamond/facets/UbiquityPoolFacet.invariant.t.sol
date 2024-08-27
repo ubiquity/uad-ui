@@ -148,7 +148,10 @@ contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
 
         handler = new PoolFacetHandler(
             collateralTokenPriceFeed,
-            ubiquityPoolFacet
+            ubiquityPoolFacet,
+            admin,
+            user,
+            curveDollarPlainPool
         );
         targetContract(address(handler));
     }
