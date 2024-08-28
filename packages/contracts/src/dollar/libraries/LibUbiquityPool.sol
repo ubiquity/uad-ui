@@ -145,6 +145,33 @@ library LibUbiquityPool {
         }
     }
 
+    /**
+     * @notice Pauses the Ubiquity Pool
+     */
+    function pause() internal {
+        UbiquityPoolStorage storage poolStorage = ubiquityPoolStorage();
+        // Instead of using a direct 'paused' field, we'll use an existing mechanism
+        // For example, if you have fields for pausing specific actions:
+        poolStorage.isMintPaused[0] = true;
+        poolStorage.isRedeemPaused[0] = true;
+        poolStorage.isBorrowPaused[0] = true;
+        // Add any other necessary pause actions
+        emit Paused();
+    }
+
+    /**
+     * @notice Unpauses the Ubiquity Pool
+     */
+    function unpause() internal {
+        UbiquityPoolStorage storage poolStorage = ubiquityPoolStorage();
+        // Unpause using the same mechanism
+        poolStorage.isMintPaused[0] = false;
+        poolStorage.isRedeemPaused[0] = false;
+        poolStorage.isBorrowPaused[0] = false;
+        // Add any other necessary unpause actions
+        emit Unpaused();
+    }
+
     //===========
     // Events
     //===========
@@ -194,6 +221,9 @@ library LibUbiquityPool {
         address newPriceFeedAddress,
         uint256 newStalenessThreshold
     );
+    event Paused();
+
+    event Unpaused();
 
     //=====================
     // Modifiers

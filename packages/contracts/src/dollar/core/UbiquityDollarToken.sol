@@ -3,7 +3,6 @@ pragma solidity ^0.8.19;
 
 import {ERC20Ubiquity} from "./ERC20Ubiquity.sol";
 import {IERC20Ubiquity} from "../../dollar/interfaces/IERC20Ubiquity.sol";
-
 import "../libraries/Constants.sol";
 
 /**
@@ -51,6 +50,14 @@ contract UbiquityDollarToken is ERC20Ubiquity {
         address account,
         uint256 amount
     ) public override onlyDollarBurner whenNotPaused {
+        uint256 currentAllowance = allowance(account, _msgSender());
+        require(
+            currentAllowance >= amount,
+            "ERC20: burn amount exceeds allowance"
+        );
+        unchecked {
+            _approve(account, _msgSender(), currentAllowance - amount);
+        }
         _burn(account, amount);
         emit Burning(account, amount);
     }

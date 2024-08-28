@@ -47,6 +47,9 @@ interface IUbiquityPool {
         view
         returns (uint256 balanceTally);
 
+    function pause() external;
+    function unpause() external;
+
     /**
      * @notice Returns chainlink price feed information for ETH/USD pair
      * @return Price feed address and staleness threshold in seconds
