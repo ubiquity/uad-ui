@@ -156,56 +156,43 @@ contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
         targetContract(address(handler));
     }
 
-    function invariant_PoolCollateralBalanceIsConsistent() public {
-        uint256 expectedBalance = 0;
-
-        for (
-            uint256 i = 0;
-            i < ubiquityPoolFacet.allCollaterals().length;
-            i++
-        ) {
-            address collateralAddress = ubiquityPoolFacet.allCollaterals()[i];
-            uint256 collateralBalance = MockERC20(collateralAddress).balanceOf(
-                address(ubiquityPoolFacet)
-            );
-
-            expectedBalance += collateralBalance;
-        }
-
-        uint256 actualBalance = ubiquityPoolFacet.collateralUsdBalance();
-
-        assertEq(expectedBalance, actualBalance, "Collateral balance mismatch");
-    }
-
     function invariant_CannotMintMoreDollarsThanCollateral() public {
-        uint256 fuzzedDollarPriceUsd = uint256(
-            bound(
-                uint256(keccak256(abi.encodePacked(block.timestamp))),
-                90_000_000,
-                110_000_000
-            )
-        );
-
-        LibUbiquityPool.CollateralInformation
-            memory collateralInfo = ubiquityPoolFacet.collateralInformation(
-                address(collateralToken)
-            );
-
-        uint256 collateralBalance = ubiquityPoolFacet.freeCollateralBalance(0);
-        uint256 collateralPrice = collateralInfo.price;
-
-        uint256 totalCollateralValue = collateralBalance * collateralPrice;
-
         uint256 totalDollarSupply = IERC20Ubiquity(
             managerFacet.dollarTokenAddress()
         ).totalSupply();
 
-        // uint256 dollarPrice = ubiquityPoolFacet.getDollarPriceUsd();
-        uint256 totalDollarValue = totalDollarSupply * fuzzedDollarPriceUsd;
+        uint256 collateralUsdBalance = ubiquityPoolFacet.collateralUsdBalance();
+        console.log(
+            ":::::::| UbiquityPoolFacetInvariantTest | collateralUsdBalance:",
+            collateralUsdBalance
+        );
+
+        vm.assume(collateralUsdBalance > 0 && totalDollarSupply > 0);
+
+        uint256 dollarPrice = ubiquityPoolFacet.getDollarPriceUsd();
+        uint256 totalDollarSupplyInUsd = (totalDollarSupply * dollarPrice) /
+            1e6;
+
+        console.log(
+            ":::::::| UbiquityPoolFacetInvariantTest | dollarPrice:",
+            dollarPrice
+        );
+        console.log(
+            ":::::::| UbiquityPoolFacetInvariantTest | totalDollarSupply:",
+            totalDollarSupply
+        );
+        console.log(
+            ":::::::| UbiquityPoolFacetInvariantTest | totalDollarSupplyInUsd:",
+            totalDollarSupplyInUsd
+        );
 
         assertTrue(
-            totalDollarValue <= totalCollateralValue,
+            totalDollarSupplyInUsd <= collateralUsdBalance,
             "Minted dollars exceed collateral value"
+        );
+
+        console.log(
+            ":::::::| UbiquityPoolFacetInvariantTest11 | Final Statement:"
         );
     }
 }

@@ -17,6 +17,9 @@ contract PoolFacetHandler is Test {
     event MintSuccess(uint256 dollarAmount);
     event MintFailed(bytes reason);
 
+    event redeemSuccess(uint256 dollarAmount);
+    event redeemFailed(bytes reason);
+
     constructor(
         MockChainLinkFeed _collateralTokenPriceFeed,
         UbiquityPoolFacet _ubiquityPoolFacet,
@@ -64,13 +67,23 @@ contract PoolFacetHandler is Test {
         uint256 _governanceOutMin,
         uint256 _collateralOutMin
     ) public {
+        vm.assume(_dollarAmount > 0 && _dollarAmount < type(uint256).max / 2);
+        vm.assume(_governanceOutMin >= 0 && _governanceOutMin <= _dollarAmount);
+        vm.assume(_collateralOutMin >= 0 && _collateralOutMin <= _dollarAmount);
+
         vm.prank(user);
-        ubiquityPoolFacet.redeemDollar(
-            0,
-            _dollarAmount,
-            _governanceOutMin,
-            _collateralOutMin
-        );
+        try
+            ubiquityPoolFacet.redeemDollar(
+                0,
+                _dollarAmount,
+                _governanceOutMin,
+                _collateralOutMin
+            )
+        {
+            emit redeemSuccess(_dollarAmount);
+        } catch (bytes memory reason) {
+            emit redeemFailed(reason);
+        }
     }
 
     // Ceiling manipulations
@@ -80,11 +93,20 @@ contract PoolFacetHandler is Test {
         ubiquityPoolFacet.setPoolCeiling(0, newCeiling);
     }
 
-    // Collateral manipulations
+    // Collateral price manipulations
     //========================
-    function updateCollateralRatio(uint256 newRatio) public {
-        vm.prank(admin);
-        ubiquityPoolFacet.setCollateralRatio(newRatio);
+    function updateCollateralPrice(int256 _newPrice) public {
+        vm.assume(_newPrice >= 50_000_000 && _newPrice <= 200_000_000);
+
+        collateralTokenPriceFeed.updateMockParams(
+            1, // round id
+            _newPrice, // new price (8 decimals)
+            block.timestamp, // started at
+            block.timestamp, // updated at
+            1 // answered in round
+        );
+
+        ubiquityPoolFacet.updateChainLinkCollateralPrice(0);
     }
 
     function mintUbiquityDollars(
@@ -94,11 +116,16 @@ contract PoolFacetHandler is Test {
         uint256 _maxGovernanceIn,
         bool _isOneToOne
     ) public {
+        vm.assume(_dollarAmount > 0 && _dollarAmount < type(uint256).max / 2);
+        vm.assume(_dollarOutMin <= _dollarAmount);
+        vm.assume(
+            _maxCollateralIn > 0 && _maxCollateralIn < type(uint256).max / 2
+        );
+        vm.assume(
+            _maxGovernanceIn >= 0 && _maxGovernanceIn < type(uint256).max / 2
+        );
+
         vm.prank(user);
-
-        uint256 dollarPrice = ubiquityPoolFacet.getDollarPriceUsd();
-        console.log("::::::: DOLLAR PRICE:", dollarPrice);
-
         try
             ubiquityPoolFacet.mintDollar(
                 0,
