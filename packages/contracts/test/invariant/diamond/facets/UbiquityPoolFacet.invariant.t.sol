@@ -190,9 +190,5 @@ contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
             totalDollarSupplyInUsd <= collateralUsdBalance,
             "Minted dollars exceed collateral value"
         );
-
-        console.log(
-            ":::::::| UbiquityPoolFacetInvariantTest11 | Final Statement:"
-        );
     }
 }
