@@ -12,6 +12,7 @@ contract PoolFacetHandler is Test {
     using SafeMath for uint256;
 
     MockChainLinkFeed collateralTokenPriceFeed;
+    MockChainLinkFeed stableUsdPriceFeed;
     UbiquityPoolFacet ubiquityPoolFacet;
     address admin;
     address user;
@@ -25,12 +26,14 @@ contract PoolFacetHandler is Test {
 
     constructor(
         MockChainLinkFeed _collateralTokenPriceFeed,
+        MockChainLinkFeed _stableUsdPriceFeed,
         UbiquityPoolFacet _ubiquityPoolFacet,
         address _admin,
         address _user,
         MockCurveStableSwapNG _curveDollarPlainPool
     ) {
         collateralTokenPriceFeed = _collateralTokenPriceFeed;
+        stableUsdPriceFeed = _stableUsdPriceFeed;
         ubiquityPoolFacet = _ubiquityPoolFacet;
         admin = _admin;
         user = _user;
@@ -115,12 +118,12 @@ contract PoolFacetHandler is Test {
 
     // Collateral price manipulations
     //========================
-    function updateCollateralPrice(int256 _newPrice) public {
+    function setCollateralPrice(int256 _newPrice) public {
         vm.assume(_newPrice >= 50_000_000 && _newPrice <= 200_000_000);
 
         collateralTokenPriceFeed.updateMockParams(
             1, // round id
-            _newPrice, // new price (8 decimals)
+            _newPrice,
             block.timestamp, // started at
             block.timestamp, // updated at
             1 // answered in round
@@ -129,6 +132,23 @@ contract PoolFacetHandler is Test {
         ubiquityPoolFacet.updateChainLinkCollateralPrice(0);
 
         uint256 newCollateralRatio = uint256(1e6 * 1e8).div(uint256(_newPrice));
+        ubiquityPoolFacet.setCollateralRatio(newCollateralRatio);
+    }
+
+    // USD stablecoin price manipulations
+    //========================
+    function setStableUsdPrice(uint256 _newPrice) public {
+        vm.assume(_newPrice >= 0.5e8 && _newPrice <= 1.5e8); // Assume a range for testing
+
+        stableUsdPriceFeed.updateMockParams(
+            1, // round id
+            int256(_newPrice),
+            block.timestamp, // started at
+            block.timestamp, // updated at
+            1 // answered in round
+        );
+
+        uint256 newCollateralRatio = uint256(1e6 * 1e8).div(_newPrice);
         ubiquityPoolFacet.setCollateralRatio(newCollateralRatio);
     }
 
