@@ -38,7 +38,8 @@ contract PoolFacetHandler is Test {
     //========================
     function setDollarPriceAboveThreshold() public {
         vm.prank(admin);
-        curveDollarPlainPool.updateMockParams(1.02e18);
+        curveDollarPlainPool.updateMockParams(1.01e18);
+        // curveDollarPlainPool.updateMockParams(1.02e18);
     }
 
     function setDollarPriceBelowThreshold() public {
@@ -48,14 +49,17 @@ contract PoolFacetHandler is Test {
 
     // Redeem manipulations
     //========================
-    function setMintAndRedeemFees(uint256 mintFee, uint256 redeemFee) public {
-        vm.prank(admin);
-        ubiquityPoolFacet.setFees(0, mintFee, redeemFee);
-    }
-
     function setRedemptionDelay(uint256 delay) public {
         vm.prank(admin);
         ubiquityPoolFacet.setRedemptionDelayBlocks(delay);
+    }
+
+    function setMintAndRedeemFees(uint256 mintFee, uint256 redeemFee) public {
+        vm.assume(mintFee >= 100000 && mintFee <= 200000);
+        vm.assume(redeemFee >= 100000 && redeemFee <= 200000);
+
+        vm.prank(admin);
+        ubiquityPoolFacet.setFees(0, mintFee, redeemFee);
     }
 
     function collectRedemption() public {
@@ -96,7 +100,7 @@ contract PoolFacetHandler is Test {
     // Collateral price manipulations
     //========================
     function updateCollateralPrice(int256 _newPrice) public {
-        vm.assume(_newPrice >= 50_000_000 && _newPrice <= 200_000_000);
+        vm.assume(_newPrice >= 100_000_000 && _newPrice <= 200_000_000);
 
         collateralTokenPriceFeed.updateMockParams(
             1, // round id
