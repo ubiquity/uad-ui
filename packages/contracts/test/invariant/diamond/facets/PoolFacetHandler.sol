@@ -6,8 +6,11 @@ import "forge-std/console.sol";
 import {UbiquityPoolFacet} from "../../../../src/dollar/facets/UbiquityPoolFacet.sol";
 import {MockChainLinkFeed} from "../../../../src/dollar/mocks/MockChainLinkFeed.sol";
 import {MockCurveStableSwapNG} from "../../../../src/dollar/mocks/MockCurveStableSwapNG.sol";
+import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract PoolFacetHandler is Test {
+    using SafeMath for uint256;
+
     MockChainLinkFeed collateralTokenPriceFeed;
     UbiquityPoolFacet ubiquityPoolFacet;
     address admin;
@@ -36,15 +39,28 @@ contract PoolFacetHandler is Test {
 
     // Dollar price manipulations
     //========================
-    function setDollarPriceAboveThreshold() public {
+    function setDollarPriceAboveThreshold(uint256 newDollarPrice) public {
+        vm.assume(newDollarPrice > 1e18 && newDollarPrice < 2e18);
+
         vm.prank(admin);
-        curveDollarPlainPool.updateMockParams(1.01e18);
-        // curveDollarPlainPool.updateMockParams(1.02e18);
+        curveDollarPlainPool.updateMockParams(newDollarPrice);
+
+        uint256 reductionFactor = newDollarPrice.sub(1e18).div(1e16);
+        uint256 newCollateralRatio = uint256(1e6).sub(reductionFactor);
+
+        ubiquityPoolFacet.setCollateralRatio(newCollateralRatio);
     }
 
-    function setDollarPriceBelowThreshold() public {
+    function setDollarPriceBelowThreshold(uint256 newDollarPrice) public {
+        vm.assume(newDollarPrice >= 0.5e18 && newDollarPrice < 1e18);
+
         vm.prank(admin);
-        curveDollarPlainPool.updateMockParams(0.98e18);
+        curveDollarPlainPool.updateMockParams(newDollarPrice);
+
+        uint256 increaseFactor = uint256(1e18).sub(newDollarPrice).div(1e16);
+        uint256 newCollateralRatio = uint256(1e6).add(increaseFactor);
+
+        ubiquityPoolFacet.setCollateralRatio(newCollateralRatio);
     }
 
     // Redeem manipulations
@@ -100,7 +116,7 @@ contract PoolFacetHandler is Test {
     // Collateral price manipulations
     //========================
     function updateCollateralPrice(int256 _newPrice) public {
-        vm.assume(_newPrice >= 100_000_000 && _newPrice <= 200_000_000);
+        vm.assume(_newPrice >= 50_000_000 && _newPrice <= 200_000_000);
 
         collateralTokenPriceFeed.updateMockParams(
             1, // round id
@@ -111,6 +127,9 @@ contract PoolFacetHandler is Test {
         );
 
         ubiquityPoolFacet.updateChainLinkCollateralPrice(0);
+
+        uint256 newCollateralRatio = uint256(1e6 * 1e8).div(uint256(_newPrice));
+        ubiquityPoolFacet.setCollateralRatio(newCollateralRatio);
     }
 
     function mintUbiquityDollars(

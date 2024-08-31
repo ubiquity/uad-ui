@@ -167,12 +167,36 @@ contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
         ).totalSupply();
 
         uint256 collateralUsdBalance = ubiquityPoolFacet.collateralUsdBalance();
+        console.log(
+            ":::::::| UbiquityPoolFacetInvariantTest | collateralUsdBalance:",
+            collateralUsdBalance
+        );
 
         vm.assume(collateralUsdBalance > 0 && totalDollarSupply > 0);
 
         uint256 dollarPrice = ubiquityPoolFacet.getDollarPriceUsd();
         uint256 totalDollarSupplyInUsd = (totalDollarSupply * dollarPrice) /
             1e6;
+
+        uint256 ratio = ubiquityPoolFacet.collateralRatio();
+
+        console.log(
+            ":::::::| UbiquityPoolFacetInvariantTest | collateralRatio:",
+            ratio
+        );
+
+        console.log(
+            ":::::::| UbiquityPoolFacetInvariantTest | dollarPrice:",
+            dollarPrice
+        );
+        console.log(
+            ":::::::| UbiquityPoolFacetInvariantTest | totalDollarSupply:",
+            totalDollarSupply
+        );
+        console.log(
+            ":::::::| UbiquityPoolFacetInvariantTest11 | totalDollarSupplyInUsd:",
+            totalDollarSupplyInUsd
+        );
 
         assertTrue(
             totalDollarSupplyInUsd <= collateralUsdBalance,
