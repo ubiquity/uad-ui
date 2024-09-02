@@ -256,6 +256,11 @@ contract PoolFacetHandler is Test {
         vm.assume(_collateralOutMin >= 0 && _collateralOutMin <= _dollarAmount);
 
         vm.prank(user);
-        ubiquityPoolFacet.redeemDollar(0, 0.1e18, 0, 0);
+        ubiquityPoolFacet.redeemDollar(
+            0,
+            _dollarAmount,
+            _governanceOutMin,
+            _collateralOutMin
+        );
     }
 }
