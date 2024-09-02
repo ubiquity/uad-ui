@@ -13,6 +13,7 @@ contract PoolFacetHandler is Test {
 
     MockChainLinkFeed collateralTokenPriceFeed;
     MockChainLinkFeed stableUsdPriceFeed;
+    MockChainLinkFeed ethUsdPriceFeed;
     UbiquityPoolFacet ubiquityPoolFacet;
     address admin;
     address user;
@@ -27,6 +28,7 @@ contract PoolFacetHandler is Test {
     constructor(
         MockChainLinkFeed _collateralTokenPriceFeed,
         MockChainLinkFeed _stableUsdPriceFeed,
+        MockChainLinkFeed _ethUsdPriceFeed,
         UbiquityPoolFacet _ubiquityPoolFacet,
         address _admin,
         address _user,
@@ -34,6 +36,7 @@ contract PoolFacetHandler is Test {
     ) {
         collateralTokenPriceFeed = _collateralTokenPriceFeed;
         stableUsdPriceFeed = _stableUsdPriceFeed;
+        ethUsdPriceFeed = _ethUsdPriceFeed;
         ubiquityPoolFacet = _ubiquityPoolFacet;
         admin = _admin;
         user = _user;
@@ -150,6 +153,20 @@ contract PoolFacetHandler is Test {
 
         uint256 newCollateralRatio = uint256(1e6 * 1e8).div(_newPrice);
         ubiquityPoolFacet.setCollateralRatio(newCollateralRatio);
+    }
+
+    // ETH/USD price manipulations
+    //========================
+    function setEthUsdPrice(uint256 _newPrice) public {
+        vm.assume(_newPrice >= 1000e8 && _newPrice <= 5000e8);
+
+        ethUsdPriceFeed.updateMockParams(
+            1, // round id
+            int256(_newPrice), // new price
+            block.timestamp, // started at
+            block.timestamp, // updated at
+            1 // answered in round
+        );
     }
 
     function mintUbiquityDollars(
