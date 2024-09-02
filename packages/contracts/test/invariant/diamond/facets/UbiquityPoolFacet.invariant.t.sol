@@ -163,27 +163,24 @@ contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
         targetContract(address(handler));
     }
 
+    /**
+     * @notice Ensures that the total supply of Ubiquity Dollars does not exceed the collateral value backing them.
+     * @dev This invariant checker calculates the total supply of Ubiquity Dollars in USD terms and compares it to the USD value of the collateral.
+     * The invariant asserts that the value of minted dollars does not exceed the value of the collateral.
+     * If the invariant is violated, it indicates that more Ubiquity Dollars have been minted than the available collateral can support.
+     */
     function invariant_CannotMintMoreDollarsThanCollateral() public {
         uint256 totalDollarSupply = IERC20Ubiquity(
             managerFacet.dollarTokenAddress()
         ).totalSupply();
 
         uint256 collateralUsdBalance = ubiquityPoolFacet.collateralUsdBalance();
-        console.log(
-            ":::::::| UbiquityPoolFacetInvariantTest | collateralUsdBalance:",
-            collateralUsdBalance
-        );
 
         vm.assume(collateralUsdBalance > 0 && totalDollarSupply > 0);
 
         uint256 dollarPrice = ubiquityPoolFacet.getDollarPriceUsd();
         uint256 totalDollarSupplyInUsd = (totalDollarSupply * dollarPrice) /
             1e6;
-
-        console.log(
-            ":::::::| UbiquityPoolFacetInvariantTest11 | totalDollarSupplyInUsd:",
-            totalDollarSupplyInUsd
-        );
 
         assertTrue(
             totalDollarSupplyInUsd <= collateralUsdBalance,
