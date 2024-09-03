@@ -155,7 +155,9 @@ contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
             ubiquityPoolFacet,
             admin,
             user,
-            curveDollarPlainPool
+            curveDollarPlainPool,
+            managerFacet,
+            collateralToken
         );
 
         handler.mintUbiquityDollars(1e18, 0.9e18, 1e18, 0, true);

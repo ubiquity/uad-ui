@@ -6,6 +6,9 @@ import "forge-std/console.sol";
 import {UbiquityPoolFacet} from "../../../../src/dollar/facets/UbiquityPoolFacet.sol";
 import {MockChainLinkFeed} from "../../../../src/dollar/mocks/MockChainLinkFeed.sol";
 import {MockCurveStableSwapNG} from "../../../../src/dollar/mocks/MockCurveStableSwapNG.sol";
+import {MockERC20} from "../../../../src/dollar/mocks/MockERC20.sol";
+import {IERC20Ubiquity} from "../../../../src/dollar/interfaces/IERC20Ubiquity.sol";
+import {ManagerFacet} from "../../../../src/dollar/facets/ManagerFacet.sol";
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract PoolFacetHandler is Test {
@@ -15,8 +18,13 @@ contract PoolFacetHandler is Test {
     MockChainLinkFeed collateralTokenPriceFeed;
     MockChainLinkFeed stableUsdPriceFeed;
     MockChainLinkFeed ethUsdPriceFeed;
+    MockERC20 collateralToken;
+
+    ManagerFacet managerFacet;
 
     UbiquityPoolFacet ubiquityPoolFacet;
+    IERC20Ubiquity dollar;
+    IERC20Ubiquity governanceToken;
 
     // mock two users
     address admin;
@@ -35,7 +43,10 @@ contract PoolFacetHandler is Test {
      * @param _admin The address with admin privileges, used for administrative actions in the pool.
      * @param _user The user address that interacts with the pool for testing purposes.
      * @param _curveDollarPlainPool The mocked Curve pool contract used for dollar-based operations.
+     * @param _managerFacet The manager facet contract, which provides access to various addresses and core components of the Ubiquity system.
+     * @param _collateralToken The mock ERC20 collateral token used in the pool for testing deposit and redemption functionalities.
      */
+
     constructor(
         MockChainLinkFeed _collateralTokenPriceFeed,
         MockChainLinkFeed _stableUsdPriceFeed,
@@ -43,7 +54,9 @@ contract PoolFacetHandler is Test {
         UbiquityPoolFacet _ubiquityPoolFacet,
         address _admin,
         address _user,
-        MockCurveStableSwapNG _curveDollarPlainPool
+        MockCurveStableSwapNG _curveDollarPlainPool,
+        ManagerFacet _managerFacet,
+        MockERC20 _collateralToken
     ) {
         collateralTokenPriceFeed = _collateralTokenPriceFeed;
         stableUsdPriceFeed = _stableUsdPriceFeed;
@@ -52,6 +65,11 @@ contract PoolFacetHandler is Test {
         admin = _admin;
         user = _user;
         curveDollarPlainPool = _curveDollarPlainPool;
+        managerFacet = _managerFacet;
+        collateralToken = _collateralToken;
+
+        dollar = IERC20Ubiquity(managerFacet.dollarTokenAddress());
+        governanceToken = IERC20Ubiquity(managerFacet.governanceTokenAddress());
     }
 
     /**
@@ -213,19 +231,17 @@ contract PoolFacetHandler is Test {
         uint256 _maxGovernanceIn,
         bool _isOneToOne
     ) public {
-        vm.assume(
-            _dollarAmount > 0 && _dollarAmount < type(uint256).max.div(2)
-        );
+        uint256 maxUintHalf = type(uint256).max.div(2);
+        uint256 collateralTotalSupply = collateralToken.totalSupply();
+
+        vm.assume(_dollarAmount > 0 && _dollarAmount < maxUintHalf);
         vm.assume(_dollarOutMin <= _dollarAmount);
         vm.assume(
-            _maxCollateralIn > 0 && _maxCollateralIn < type(uint256).max.div(2)
+            _maxCollateralIn > 0 && _maxCollateralIn < collateralTotalSupply
         );
-        vm.assume(
-            _maxGovernanceIn >= 0 && _maxGovernanceIn < type(uint256).max.div(2)
-        );
+        vm.assume(_maxGovernanceIn >= 0 && _maxGovernanceIn <= maxUintHalf);
 
         vm.prank(user);
-
         ubiquityPoolFacet.mintDollar(
             0,
             _dollarAmount,
@@ -249,11 +265,15 @@ contract PoolFacetHandler is Test {
         uint256 _governanceOutMin,
         uint256 _collateralOutMin
     ) public {
+        uint256 maxUintHalf = type(uint256).max.div(2);
+        uint256 dollarTotalSupply = dollar.totalSupply();
+        uint256 collateralTotalSupply = collateralToken.totalSupply();
+
+        vm.assume(_dollarAmount > 0 && _dollarAmount < dollarTotalSupply);
         vm.assume(
-            _dollarAmount > 0 && _dollarAmount < type(uint256).max.div(2)
+            _collateralOutMin >= 0 && _collateralOutMin <= collateralTotalSupply
         );
-        vm.assume(_governanceOutMin >= 0 && _governanceOutMin <= _dollarAmount);
-        vm.assume(_collateralOutMin >= 0 && _collateralOutMin <= _dollarAmount);
+        vm.assume(_governanceOutMin >= 0 && _governanceOutMin <= maxUintHalf);
 
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(
