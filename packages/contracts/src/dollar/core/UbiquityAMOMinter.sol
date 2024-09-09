@@ -16,8 +16,8 @@ contract UbiquityAMOMinter is Ownable {
     /* ========== STATE VARIABLES ========== */
 
     // Core
-    IUbiquityDollarToken public uAD = IUbiquityDollarToken(0x0F644658510c95CB46955e55D7BA9DDa9E9fBEc6);
-    IUbiquityGovernanceToken public UBQ = IUbiquityGovernanceToken(0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0);
+    IUbiquityDollarToken public dollar = IUbiquityDollarToken(0x0F644658510c95CB46955e55D7BA9DDa9E9fBEc6);
+    IUbiquityGovernanceToken public governance = IUbiquityGovernanceToken(0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0);
     ERC20 public collateral_token;
     IUbiquityPool public pool = IUbiquityPool(0xED3084c98148e2528DaDCB53C56352e549C488fA);
 
@@ -38,26 +38,26 @@ contract UbiquityAMOMinter is Ownable {
     // Max amount of collateral the contract can borrow from the Ubiquity Pool
     int256 public collat_borrow_cap = int256(10000000e6);
 
-    // Max amount of uAD and UBQ this contract can mint
-    int256 public uad_mint_cap = int256(100000000e18);
-    int256 public ubq_mint_cap = int256(100000000e18);
+    // Max amount of dollar and governance this contract can mint
+    int256 public dollar_mint_cap = int256(100000000e18);
+    int256 public governance_mint_cap = int256(100000000e18);
 
-    // Minimum collateral ratio needed for new uAD minting
+    // Minimum collateral ratio needed for new dollar minting
     uint256 public min_cr = 810000;
 
-    // uAD mint balances
-    mapping(address => int256) public uad_mint_balances; // Amount of uAD the contract minted, by AMO
-    int256 public uad_mint_sum = 0; // Across all AMOs
+    // dollar mint balances
+    mapping(address => int256) public dollar_mint_balances; // Amount of dollar the contract minted, by AMO
+    int256 public dollar_mint_sum = 0; // Across all AMOs
 
-    // UBQ mint balances
-    mapping(address => int256) public ubq_mint_balances; // Amount of UBQ the contract minted, by AMO
-    int256 public ubq_mint_sum = 0; // Across all AMOs
+    // governance mint balances
+    mapping(address => int256) public governance_mint_balances; // Amount of governance the contract minted, by AMO
+    int256 public governance_mint_sum = 0; // Across all AMOs
 
     // Collateral borrowed balances
     mapping(address => int256) public collat_borrowed_balances; // Amount of collateral the contract borrowed, by AMO
     int256 public collat_borrowed_sum = 0; // Across all AMOs
 
-    // uAD balance related
+    // dollar balance related
     uint256 public ubiquityDollarBalanceStored = 0;
 
     // Collateral balance related
@@ -66,7 +66,7 @@ contract UbiquityAMOMinter is Ownable {
 
     // AMO balance corrections
     mapping(address => int256[2]) public correction_offsets_amos;
-    // [amo_address][0] = AMO's uad_val_e18
+    // [amo_address][0] = AMO's dollar_val_e18
     // [amo_address][1] = AMO's collat_val_e18
 
     /* ========== CONSTRUCTOR ========== */
@@ -113,8 +113,8 @@ contract UbiquityAMOMinter is Ownable {
         return collat_val_e18;
     }
 
-    function dollarBalances() public view returns (uint256 uad_val_e18, uint256 collat_val_e18) {
-        uad_val_e18 = ubiquityDollarBalanceStored;
+    function dollarBalances() public view returns (uint256 dollar_val_e18, uint256 collat_val_e18) {
+        dollar_val_e18 = ubiquityDollarBalanceStored;
         collat_val_e18 = collatDollarBalanceStored;
     }
 
@@ -126,32 +126,32 @@ contract UbiquityAMOMinter is Ownable {
         return amos_array.length;
     }
 
-    function uadTrackedGlobal() external view returns (int256) {
-        return int256(ubiquityDollarBalanceStored) - uad_mint_sum - (collat_borrowed_sum * int256(10 ** missing_decimals));
+    function dollarTrackedGlobal() external view returns (int256) {
+        return int256(ubiquityDollarBalanceStored) - dollar_mint_sum - (collat_borrowed_sum * int256(10 ** missing_decimals));
     }
 
-    function uadTrackedAMO(address amo_address) external view returns (int256) {
-        (uint256 uad_val_e18, ) = IAMO(amo_address).dollarBalances();
-        int256 uad_val_e18_corrected = int256(uad_val_e18) + correction_offsets_amos[amo_address][0];
-        return uad_val_e18_corrected - uad_mint_balances[amo_address] - ((collat_borrowed_balances[amo_address]) * int256(10 ** missing_decimals));
+    function dollarTrackedAMO(address amo_address) external view returns (int256) {
+        (uint256 dollar_val_e18, ) = IAMO(amo_address).dollarBalances();
+        int256 dollar_val_e18_corrected = int256(dollar_val_e18) + correction_offsets_amos[amo_address][0];
+        return dollar_val_e18_corrected - dollar_mint_balances[amo_address] - ((collat_borrowed_balances[amo_address]) * int256(10 ** missing_decimals));
     }
 
     /* ========== PUBLIC FUNCTIONS ========== */
 
     // Callable by anyone willing to pay the gas
     function syncDollarBalances() public {
-        uint256 total_uad_value_e18 = 0;
+        uint256 total_dollar_value_e18 = 0;
         uint256 total_collateral_value_e18 = 0; 
         for (uint i = 0; i < amos_array.length; i++){ 
             // Exclude null addresses
             address amo_address = amos_array[i];
             if (amo_address != address(0)){
-                (uint256 uad_val_e18, uint256 collat_val_e18) = IAMO(amo_address).dollarBalances();
-                total_uad_value_e18 += uint256(int256(uad_val_e18) + correction_offsets_amos[amo_address][0]);
+                (uint256 dollar_val_e18, uint256 collat_val_e18) = IAMO(amo_address).dollarBalances();
+                total_dollar_value_e18 += uint256(int256(dollar_val_e18) + correction_offsets_amos[amo_address][0]);
                 total_collateral_value_e18 += uint256(int256(collat_val_e18) + correction_offsets_amos[amo_address][1]);
             }
         }
-        ubiquityDollarBalanceStored = total_uad_value_e18;
+        ubiquityDollarBalanceStored = total_dollar_value_e18;
         collatDollarBalanceStored = total_collateral_value_e18;
     }
 
@@ -159,76 +159,76 @@ contract UbiquityAMOMinter is Ownable {
     // Only owner or timelock can call, to limit risk 
 
     // ------------------------------------------------------------------
-    // ------------------------------- uAD ------------------------------
+    // ----------------------------- dollar -----------------------------
     // ------------------------------------------------------------------
 
     // This contract is essentially marked as a 'pool' so it can call OnlyPools functions like pool_mint and pool_burn_from
-    // on the main uAD contract
-    function mintUADForAMO(address destination_amo, uint256 uad_amount) external onlyByOwnGov validAMO(destination_amo) {
-        int256 uad_amt_i256 = int256(uad_amount);
+    // on the main dollar contract
+    function mintDollarForAMO(address destination_amo, uint256 dollar_amount) external onlyByOwnGov validAMO(destination_amo) {
+        int256 dollar_amt_i256 = int256(dollar_amount);
 
         // Make sure you aren't minting more than the mint cap
-        require((uad_mint_sum + uad_amt_i256) <= uad_mint_cap, "Mint cap reached");
-        uad_mint_balances[destination_amo] += uad_amt_i256;
-        uad_mint_sum += uad_amt_i256;
+        require((dollar_mint_sum + dollar_amt_i256) <= dollar_mint_cap, "Mint cap reached");
+        dollar_mint_balances[destination_amo] += dollar_amt_i256;
+        dollar_mint_sum += dollar_amt_i256;
 
-        // Make sure the uAD minting wouldn't push the CR down too much
+        // Make sure the dollar minting wouldn't push the CR down too much
         // This is also a sanity check for the int256 math
         uint256 current_collateral_E18 = pool.collateralUsdBalance();
-        uint256 cur_uad_supply = uAD.totalSupply();
-        uint256 new_uad_supply = cur_uad_supply + uad_amount;
-        uint256 new_cr = (current_collateral_E18 * PRICE_PRECISION) / new_uad_supply;
+        uint256 cur_dollar_supply = dollar.totalSupply();
+        uint256 new_dollar_supply = cur_dollar_supply + dollar_amount;
+        uint256 new_cr = (current_collateral_E18 * PRICE_PRECISION) / new_dollar_supply;
         require(new_cr >= min_cr, "CR would be too low");
 
-        // Mint the uAD to the AMO
-        // pool.mintDollar(col_idx, uad_amount, uad_amount, );
+        // Mint the dollar to the AMO
+        // pool.mintDollar(col_idx, dollar_amount, dollar_amount, );
 
         // Sync
         syncDollarBalances();
     }
 
-    function burnUADFromAMO(uint256 uad_amount) external validAMO(msg.sender) {
-        int256 uad_amt_i256 = int256(uad_amount);
+    function burnDollarFromAMO(uint256 dollar_amount) external validAMO(msg.sender) {
+        int256 dollar_amt_i256 = int256(dollar_amount);
 
         // Burn first
-        //uAD.pool_burn_from(msg.sender, uad_amount);
+        //dollar.pool_burn_from(msg.sender, dollar_amount);
 
         // Then update the balances
-        uad_mint_balances[msg.sender] -= uad_amt_i256;
-        uad_mint_sum -= uad_amt_i256;
+        dollar_mint_balances[msg.sender] -= dollar_amt_i256;
+        dollar_mint_sum -= dollar_amt_i256;
 
         // Sync
         syncDollarBalances();
     }
 
     // ------------------------------------------------------------------
-    // ------------------------------- UBQ ------------------------------
+    // --------------------------- governance ---------------------------
     // ------------------------------------------------------------------
 
-    function mintUBQForAMO(address destination_amo, uint256 ubq_amount) external onlyByOwnGov validAMO(destination_amo) {
-        int256 ubq_amount_i256 = int256(ubq_amount);
+    function mintGovernanceForAMO(address destination_amo, uint256 governance_amount) external onlyByOwnGov validAMO(destination_amo) {
+        int256 governance_amount_i256 = int256(governance_amount);
 
         // Make sure you aren't minting more than the mint cap
-        require((ubq_mint_sum + ubq_amount_i256) <= ubq_mint_cap, "Mint cap reached");
-        ubq_mint_balances[destination_amo] += ubq_amount_i256;
-        ubq_mint_sum += ubq_amount_i256;
+        require((governance_mint_sum + governance_amount_i256) <= governance_mint_cap, "Mint cap reached");
+        governance_mint_balances[destination_amo] += governance_amount_i256;
+        governance_mint_sum += governance_amount_i256;
 
-        // Mint the UBQ to the AMO
-        // UBQ.pool_mint(destination_amo, ubq_amount);
+        // Mint the governance to the AMO
+        // governance.pool_mint(destination_amo, governance_amount);
 
         // Sync
         syncDollarBalances();
     }
 
-    function burnUBQFromAMO(uint256 ubq_amount) external validAMO(msg.sender) {
-        int256 ubq_amount_i256 = int256(ubq_amount);
+    function burnGovernanceFromAMO(uint256 governance_amount) external validAMO(msg.sender) {
+        int256 governance_amount_i256 = int256(governance_amount);
 
         // first
-        // UBQ.pool_burn_from(msg.sender, ubq_amount);
+        // governance.pool_burn_from(msg.sender, governance_amount);
 
         // Then update the balances
-        ubq_mint_balances[msg.sender] -= ubq_amount_i256;
-        ubq_mint_sum -= ubq_amount_i256;
+        governance_mint_balances[msg.sender] -= governance_amount_i256;
+        governance_mint_sum -= governance_amount_i256;
 
         // Sync
         syncDollarBalances();
@@ -278,16 +278,16 @@ contract UbiquityAMOMinter is Ownable {
     function addAMO(address amo_address, bool sync_too) public onlyByOwnGov {
         require(amo_address != address(0), "Zero address detected");
 
-        (uint256 uad_val_e18, uint256 collat_val_e18) = IAMO(amo_address).dollarBalances();
-        require(uad_val_e18 >= 0 && collat_val_e18 >= 0, "Invalid AMO");
+        (uint256 dollar_val_e18, uint256 collat_val_e18) = IAMO(amo_address).dollarBalances();
+        require(dollar_val_e18 >= 0 && collat_val_e18 >= 0, "Invalid AMO");
 
         require(amos[amo_address] == false, "Address already exists");
         amos[amo_address] = true; 
         amos_array.push(amo_address);
 
         // Mint balances
-        uad_mint_balances[amo_address] = 0;
-        ubq_mint_balances[amo_address] = 0;
+        dollar_mint_balances[amo_address] = 0;
+        governance_mint_balances[amo_address] = 0;
         collat_borrowed_balances[amo_address] = 0;
 
         // Offsets
@@ -330,12 +330,12 @@ contract UbiquityAMOMinter is Ownable {
         custodian_address = _custodian_address;
     }
 
-    function setUADMintCap(uint256 _uad_mint_cap) external onlyByOwnGov {
-        uad_mint_cap = int256(_uad_mint_cap);
+    function setDollarMintCap(uint256 _dollar_mint_cap) external onlyByOwnGov {
+        dollar_mint_cap = int256(_dollar_mint_cap);
     }
 
-    function setUBQMintCap(uint256 _ubq_mint_cap) external onlyByOwnGov {
-        ubq_mint_cap = int256(_ubq_mint_cap);
+    function setGovernanceMintCap(uint256 _governance_mint_cap) external onlyByOwnGov {
+        governance_mint_cap = int256(_governance_mint_cap);
     }
 
     function setCollatBorrowCap(uint256 _collat_borrow_cap) external onlyByOwnGov {
@@ -346,14 +346,14 @@ contract UbiquityAMOMinter is Ownable {
         min_cr = _min_cr;
     }
 
-    function setAMOCorrectionOffsets(address amo_address, int256 uad_e18_correction, int256 collat_e18_correction) external onlyByOwnGov {
-        correction_offsets_amos[amo_address][0] = uad_e18_correction;
+    function setAMOCorrectionOffsets(address amo_address, int256 dollar_e18_correction, int256 collat_e18_correction) external onlyByOwnGov {
+        correction_offsets_amos[amo_address][0] = dollar_e18_correction;
         correction_offsets_amos[amo_address][1] = collat_e18_correction;
 
         syncDollarBalances();
     }
 
-    function setUADPool(address _pool_address) external onlyByOwnGov {
+    function setDollarPool(address _pool_address) external onlyByOwnGov {
         pool = IUbiquityPool(_pool_address);
 
         // Make sure the collaterals match, or balances could get corrupted
