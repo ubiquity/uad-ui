@@ -162,8 +162,7 @@ contract UbiquityAMOMinter is Ownable {
     // ----------------------------- dollar -----------------------------
     // ------------------------------------------------------------------
 
-    // This contract is essentially marked as a 'pool' so it can call OnlyPools functions like pool_mint and pool_burn_from
-    // on the main dollar contract
+    // This contract has DOLLAR_TOKEN_MINTER_ROLE so it can mint from the Dollar contract
     function mintDollarForAMO(address destination_amo, uint256 dollar_amount) external onlyByOwnGov validAMO(destination_amo) {
         int256 dollar_amt_i256 = int256(dollar_amount);
 
@@ -181,17 +180,18 @@ contract UbiquityAMOMinter is Ownable {
         require(new_cr >= min_cr, "CR would be too low");
 
         // Mint the dollar to the AMO
-        // pool.mintDollar(col_idx, dollar_amount, dollar_amount, );
+        dollar.mint(destination_amo, dollar_amount);
 
         // Sync
         syncDollarBalances();
     }
 
+    // This contract has DOLLAR_TOKEN_BURNER_ROLE so it can burn from the Dollar contract
     function burnDollarFromAMO(uint256 dollar_amount) external validAMO(msg.sender) {
         int256 dollar_amt_i256 = int256(dollar_amount);
 
         // Burn first
-        //dollar.pool_burn_from(msg.sender, dollar_amount);
+        dollar.burnFrom(msg.sender, dollar_amount);
 
         // Then update the balances
         dollar_mint_balances[msg.sender] -= dollar_amt_i256;
@@ -205,6 +205,7 @@ contract UbiquityAMOMinter is Ownable {
     // --------------------------- governance ---------------------------
     // ------------------------------------------------------------------
 
+    //  This contract has GOVERNANCE_TOKEN_MINTER_ROLE so it can mint from the Governance contract
     function mintGovernanceForAMO(address destination_amo, uint256 governance_amount) external onlyByOwnGov validAMO(destination_amo) {
         int256 governance_amount_i256 = int256(governance_amount);
 
@@ -214,17 +215,18 @@ contract UbiquityAMOMinter is Ownable {
         governance_mint_sum += governance_amount_i256;
 
         // Mint the governance to the AMO
-        // governance.pool_mint(destination_amo, governance_amount);
+        governance.mint(destination_amo, governance_amount);
 
         // Sync
         syncDollarBalances();
     }
 
+    //  This contract has GOVERNANCE_TOKEN_BURNER_ROLE so it can burn from the Governance contract
     function burnGovernanceFromAMO(uint256 governance_amount) external validAMO(msg.sender) {
         int256 governance_amount_i256 = int256(governance_amount);
 
-        // first
-        // governance.pool_burn_from(msg.sender, governance_amount);
+        // First burn
+        governance.burnFrom(msg.sender, governance_amount);
 
         // Then update the balances
         governance_mint_balances[msg.sender] -= governance_amount_i256;
