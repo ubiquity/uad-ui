@@ -16,11 +16,11 @@ contract UbiquityAMOMinter is Ownable {
     /* ========== STATE VARIABLES ========== */
 
     // Core
-    IUbiquityDollarToken public dollar =
+    IUbiquityDollarToken public constant dollar =
         IUbiquityDollarToken(0x0F644658510c95CB46955e55D7BA9DDa9E9fBEc6);
-    IUbiquityGovernanceToken public governance =
+    IUbiquityGovernanceToken public constant governance =
         IUbiquityGovernanceToken(0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0);
-    ERC20 public collateral_token;
+    ERC20 public immutable collateral_token;
     IUbiquityPool public pool =
         IUbiquityPool(0xED3084c98148e2528DaDCB53C56352e549C488fA);
 
@@ -28,8 +28,8 @@ contract UbiquityAMOMinter is Ownable {
     address public custodian_address;
 
     // Collateral related
-    address public collateral_address;
-    uint256 public col_idx;
+    address public immutable collateral_address;
+    uint256 public immutable col_idx;
 
     // AMO addresses
     address[] public amos_array;
@@ -64,7 +64,7 @@ contract UbiquityAMOMinter is Ownable {
     uint256 public ubiquityDollarBalanceStored = 0;
 
     // Collateral balance related
-    uint256 public missing_decimals;
+    uint256 public immutable missing_decimals;
     uint256 public collatDollarBalanceStored = 0;
 
     // AMO balance corrections
@@ -341,9 +341,9 @@ contract UbiquityAMOMinter is Ownable {
     function addAMO(address amo_address, bool sync_too) public onlyByOwnGov {
         require(amo_address != address(0), "Zero address detected");
 
+        // This checks if the AMO adheres to the AMO interface
         (uint256 dollar_val_e18, uint256 collat_val_e18) = IAMO(amo_address)
             .dollarBalances();
-        require(dollar_val_e18 >= 0 && collat_val_e18 >= 0, "Invalid AMO");
 
         require(amos[amo_address] == false, "Address already exists");
         amos[amo_address] = true;
