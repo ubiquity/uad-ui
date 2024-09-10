@@ -342,8 +342,7 @@ contract UbiquityAMOMinter is Ownable {
         require(amo_address != address(0), "Zero address detected");
 
         // This checks if the AMO adheres to the AMO interface
-        (uint256 dollar_val_e18, uint256 collat_val_e18) = IAMO(amo_address)
-            .dollarBalances();
+        IAMO(amo_address).dollarBalances();
 
         require(amos[amo_address] == false, "Address already exists");
         amos[amo_address] = true;
