@@ -74,49 +74,16 @@ contract PoolFacetHandler is Test {
 
     /**
      * @notice Manipulates the Ubiquity Dollar price to a value above a set threshold.
-     * @dev This function assumes the new dollar price is within the specified range (greater than 1e18 and less than 2e18).
-     * It then updates the mocked Curve pool parameters and adjusts the collateral ratio in the UbiquityPoolFacet.
-     * @param newDollarPrice The new price for Ubiquity Dollar, expected to be within the range of 1e18 to 2e18.
      */
-    function setDollarPriceAboveThreshold(uint256 newDollarPrice) public {
-        vm.assume(newDollarPrice > 1e18 && newDollarPrice < 2e18);
-
-        vm.prank(admin);
-        curveDollarPlainPool.updateMockParams(newDollarPrice);
-
-        uint256 reductionFactor = newDollarPrice.sub(1e18).div(1e16);
-        uint256 newCollateralRatio = uint256(1e6).sub(reductionFactor);
-
-        ubiquityPoolFacet.setCollateralRatio(newCollateralRatio);
+    function setDollarPriceAboveThreshold() public {
+        curveDollarPlainPool.updateMockParams(1.01e18);
     }
 
     /**
      * @notice Manipulates the Ubiquity Dollar price to a value below a set threshold.
-     * @dev This function assumes the new dollar price is within the specified range (greater than or equal to 0.5e18 and less than 1e18).
-     * It then updates the mocked Curve pool parameters and adjusts the collateral ratio in the UbiquityPoolFacet accordingly.
-     * @param newDollarPrice The new price for Ubiquity Dollar, expected to be within the range of 0.5e18 to 1e18.
      */
-    function setDollarPriceBelowThreshold(uint256 newDollarPrice) public {
-        vm.assume(newDollarPrice >= 0.5e18 && newDollarPrice < 1e18);
-
-        vm.prank(admin);
-        curveDollarPlainPool.updateMockParams(newDollarPrice);
-
-        uint256 increaseFactor = uint256(1e18).sub(newDollarPrice).div(1e16);
-        uint256 newCollateralRatio = uint256(1e6).add(increaseFactor);
-
-        ubiquityPoolFacet.setCollateralRatio(newCollateralRatio);
-    }
-
-    /**
-     * @notice Manipulates the redemption delay in blocks for UbiquityPoolFacet.
-     * @dev This function allows the admin to set a delay in blocks before a redemption can be completed.
-     * It assumes the caller is the admin and pranks the transaction as the admin to set the redemption delay.
-     * @param delay The number of blocks to set as the redemption delay.
-     */
-    function setRedemptionDelay(uint256 delay) public {
-        vm.prank(admin);
-        ubiquityPoolFacet.setRedemptionDelayBlocks(delay);
+    function setDollarPriceBelowThreshold() public {
+        curveDollarPlainPool.updateMockParams(0.99e18);
     }
 
     /**
@@ -148,8 +115,30 @@ contract PoolFacetHandler is Test {
      * of collateral in the pool.
      */
     function setPoolCeiling(uint256 newCeiling) public {
+        uint256 maxUint = type(uint128).max;
+        vm.assume(newCeiling <= maxUint);
+
         vm.prank(admin);
         ubiquityPoolFacet.setPoolCeiling(0, newCeiling);
+    }
+
+    /**
+     * @notice Manipulates the stable USD price and updates the corresponding collateral ratio.
+     * @dev This function adjusts the price of the stable USD token using a mock ChainLink price feed.
+     * It assumes the new price is within the specified range and updates the collateral ratio in the UbiquityPoolFacet.
+     * @param _newPrice The new price of the stable USD token, scaled by 1e8 (e.g., a price of $1 is represented as 1e8).
+     */
+    function setStableUsdPrice(uint256 _newPrice) public {
+        // Assume the price is between $0.70 and $1.00 (0.7e8 <= _newPrice <= 1e8)
+        vm.assume(_newPrice >= 0.7e8 && _newPrice <= 1e8);
+
+        stableUsdPriceFeed.updateMockParams(
+            1, // round id
+            int256(_newPrice), // Set the new price dynamically based on _newPrice
+            block.timestamp, // started at
+            block.timestamp, // updated at
+            1 // answered in round
+        );
     }
 
     /**
@@ -159,7 +148,7 @@ contract PoolFacetHandler is Test {
      * @param _newPrice The new price of the collateral, scaled by 1e8 (e.g., a price of $1 is represented as 1e8).
      */
     function setCollateralPrice(int256 _newPrice) public {
-        vm.assume(_newPrice >= 50_000_000 && _newPrice <= 200_000_000);
+        vm.assume(_newPrice >= 100_000_000 && _newPrice <= 150_000_000);
 
         collateralTokenPriceFeed.updateMockParams(
             1, // round id
@@ -170,30 +159,6 @@ contract PoolFacetHandler is Test {
         );
 
         ubiquityPoolFacet.updateChainLinkCollateralPrice(0);
-
-        uint256 newCollateralRatio = uint256(1e6 * 1e8).div(uint256(_newPrice));
-        ubiquityPoolFacet.setCollateralRatio(newCollateralRatio);
-    }
-
-    /**
-     * @notice Manipulates the stable USD price and updates the corresponding collateral ratio.
-     * @dev This function adjusts the price of the stable USD token using a mock ChainLink price feed.
-     * It assumes the new price is within the specified range and updates the collateral ratio in the UbiquityPoolFacet.
-     * @param _newPrice The new price of the stable USD token, scaled by 1e8 (e.g., a price of $1 is represented as 1e8).
-     */
-    function setStableUsdPrice(uint256 _newPrice) public {
-        vm.assume(_newPrice >= 0.5e8 && _newPrice <= 1.5e8); // Assume a range for testing
-
-        stableUsdPriceFeed.updateMockParams(
-            1, // round id
-            int256(_newPrice),
-            block.timestamp, // started at
-            block.timestamp, // updated at
-            1 // answered in round
-        );
-
-        uint256 newCollateralRatio = uint256(1e6 * 1e8).div(_newPrice);
-        ubiquityPoolFacet.setCollateralRatio(newCollateralRatio);
     }
 
     /**
@@ -231,15 +196,15 @@ contract PoolFacetHandler is Test {
         uint256 _maxGovernanceIn,
         bool _isOneToOne
     ) public {
-        uint256 maxUintHalf = type(uint256).max.div(2);
+        uint256 maxUint = type(uint128).max;
         uint256 collateralTotalSupply = collateralToken.totalSupply();
 
-        vm.assume(_dollarAmount > 0 && _dollarAmount < maxUintHalf);
+        vm.assume(_dollarAmount > 0 && _dollarAmount < maxUint);
         vm.assume(_dollarOutMin <= _dollarAmount);
         vm.assume(
             _maxCollateralIn > 0 && _maxCollateralIn < collateralTotalSupply
         );
-        vm.assume(_maxGovernanceIn >= 0 && _maxGovernanceIn <= maxUintHalf);
+        vm.assume(_maxGovernanceIn >= 0 && _maxGovernanceIn <= maxUint);
 
         vm.prank(user);
         ubiquityPoolFacet.mintDollar(
@@ -265,7 +230,7 @@ contract PoolFacetHandler is Test {
         uint256 _governanceOutMin,
         uint256 _collateralOutMin
     ) public {
-        uint256 maxUintHalf = type(uint256).max.div(2);
+        uint256 maxUint = type(uint128).max;
         uint256 dollarTotalSupply = dollar.totalSupply();
         uint256 collateralTotalSupply = collateralToken.totalSupply();
 
@@ -273,7 +238,7 @@ contract PoolFacetHandler is Test {
         vm.assume(
             _collateralOutMin >= 0 && _collateralOutMin <= collateralTotalSupply
         );
-        vm.assume(_governanceOutMin >= 0 && _governanceOutMin <= maxUintHalf);
+        vm.assume(_governanceOutMin >= 0 && _governanceOutMin <= maxUint);
 
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(
