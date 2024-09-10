@@ -162,7 +162,9 @@
     "blockhash",
     "Merkle",
     "UUPS",
-    "Initializable"
+    "Initializable",
+    "IAMO",
+    "timelock"
   ],
   "flagWords": ["creditNFT", "CreditNFT"],
   "language": "en-US"

@@ -3,5 +3,8 @@ pragma solidity >=0.6.11;
 pragma experimental ABIEncoderV2;
 
 interface IAMO {
-    function dollarBalances() external view returns (uint256 uAD_val_e18, uint256 collat_val_e18);
+    function dollarBalances()
+        external
+        view
+        returns (uint256 uAD_val_e18, uint256 collat_val_e18);
 }
