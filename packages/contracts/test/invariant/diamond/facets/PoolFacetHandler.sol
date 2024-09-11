@@ -102,7 +102,23 @@ contract PoolFacetHandler is Test {
         ubiquityPoolFacet.setFees(0, mintFee, redeemFee);
     }
 
-    function collectRedemption() public {
+    /**
+     * @notice Simulates the process of a user collecting redeemed collateral and governance tokens after advancing a number of blocks.
+     * @dev This function first advances the block number by the specified amount and then simulates the user calling the `collectRedemption` function.
+     * @param _blocksToAdvance The number of blocks to advance before allowing redemption, constrained by an upper limit.
+     */
+    function collectRedemption(uint256 _blocksToAdvance) public {
+        uint256 currentBlock = block.number;
+        uint256 maxBlockAdvance = 100;
+
+        // Ensure the number of blocks to advance is within a reasonable range
+        vm.assume(_blocksToAdvance > 0 && _blocksToAdvance <= maxBlockAdvance);
+
+        // Advance the block number by the specified amount
+        vm.roll(currentBlock + _blocksToAdvance);
+
+        // Simulate the `user` performing the redemption
+        vm.prank(user);
         ubiquityPoolFacet.collectRedemption(0);
     }
 

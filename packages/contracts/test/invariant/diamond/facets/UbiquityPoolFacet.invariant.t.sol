@@ -11,8 +11,11 @@ import {PoolFacetHandler} from "./PoolFacetHandler.sol";
 import {IERC20Ubiquity} from "../../../../src/dollar/interfaces/IERC20Ubiquity.sol";
 import {MockCurveStableSwapNG} from "../../../../src/dollar/mocks/MockCurveStableSwapNG.sol";
 import {MockCurveTwocryptoOptimized} from "../../../../src/dollar/mocks/MockCurveTwocryptoOptimized.sol";
+import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
+    using SafeMath for uint256;
+
     PoolFacetHandler handler;
 
     // mock three tokens: collateral token, stable token, wrapped ETH token
@@ -172,21 +175,56 @@ contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
      * If the invariant is violated, it indicates that more Ubiquity Dollars have been minted than the available collateral can support.
      */
     function invariant_CannotMintMoreDollarsThanCollateral() public {
-        uint256 totalDollarSupply = IERC20Ubiquity(
-            managerFacet.dollarTokenAddress()
-        ).totalSupply();
-
-        uint256 collateralUsdBalance = ubiquityPoolFacet.collateralUsdBalance();
-
-        vm.assume(collateralUsdBalance > 0 && totalDollarSupply > 0);
-
-        uint256 dollarPrice = ubiquityPoolFacet.getDollarPriceUsd();
-        uint256 totalDollarSupplyInUsd = (totalDollarSupply * dollarPrice) /
-            1e6;
+        (
+            uint256 totalDollarSupplyInUsd,
+            uint256 collateralUsdBalance
+        ) = getDollarSupplyAndCollateralBalance();
 
         assertTrue(
             totalDollarSupplyInUsd <= collateralUsdBalance,
             "Minted dollars exceed collateral value"
         );
+    }
+
+    /**
+     * @notice Ensures that users cannot redeem more collateral than the value of the Dollar tokens provided.
+     * @dev This invariant checker calculates the total supply of Ubiquity Dollars in USD terms and compares it to the USD value of the collateral.
+     * The invariant asserts that the value of collateral redeemed does not exceed the value of the Dollar tokens burned.
+     * If the invariant is violated, it indicates that more collateral has been redeemed than the Ubiquity Dollars can support.
+     */
+    function invariant_CannotRedeemMoreCollateralThanDollarValue() public {
+        (
+            uint256 totalDollarSupplyInUsd,
+            uint256 collateralUsdBalance
+        ) = getDollarSupplyAndCollateralBalance();
+
+        assertTrue(
+            collateralUsdBalance >= totalDollarSupplyInUsd,
+            "Redeemed collateral exceeds provided Dollar tokens"
+        );
+    }
+
+    /**
+     * @notice Helper function to get the USD value of total Dollar supply and the collateral USD balance.
+     * @dev This function returns the current total supply of Ubiquity Dollars in USD and the USD value of the collateral.
+     * @return totalDollarSupplyInUsd The total supply of Ubiquity Dollars in USD (6 decimals).
+     * @return collateralUsdBalance The total USD value of collateral backing the Ubiquity Dollars (18 decimals).
+     */
+    function getDollarSupplyAndCollateralBalance()
+        public
+        view
+        returns (uint256 totalDollarSupplyInUsd, uint256 collateralUsdBalance)
+    {
+        uint256 totalDollarSupply = IERC20Ubiquity(
+            managerFacet.dollarTokenAddress()
+        ).totalSupply();
+
+        collateralUsdBalance = ubiquityPoolFacet.collateralUsdBalance();
+
+        require(collateralUsdBalance > 0, "Collateral balance is zero");
+        require(totalDollarSupply > 0, "Dollar supply is zero");
+
+        uint256 dollarPrice = ubiquityPoolFacet.getDollarPriceUsd();
+        totalDollarSupplyInUsd = totalDollarSupply.mul(dollarPrice).div(1e6);
     }
 }
