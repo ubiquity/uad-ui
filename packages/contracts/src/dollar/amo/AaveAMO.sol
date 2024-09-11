@@ -8,7 +8,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IPool} from "@aavev3-core/contracts/interfaces/IPool.sol";
 import {IPoolDataProvider} from "@aavev3-core/contracts/interfaces/IPoolDataProvider.sol";
 import {IRewardsController} from "@aavev3-periphery/contracts/rewards/interfaces/IRewardsController.sol";
-import {IStakedToken} from "@aavev3-periphery/contracts/rewards/interfaces/IStakedToken.sol";
 
 contract AaveAMO is Ownable {
     using SafeERC20 for ERC20;
@@ -36,6 +35,31 @@ contract AaveAMO is Ownable {
     // Borrowed assets
     address[] public aave_borrow_asset_list;
     mapping(address => bool) public aave_borrow_asset_check; // Mapping is also used for faster verification
+
+    /* ========== EVENTS ========== */
+    event CollateralDeposited(
+        address indexed collateral_address,
+        uint256 amount
+    );
+    event CollateralWithdrawn(
+        address indexed collateral_address,
+        uint256 amount
+    );
+    event Borrowed(
+        address indexed asset,
+        uint256 amount,
+        uint256 interestRateMode
+    );
+    event Repaid(
+        address indexed asset,
+        uint256 amount,
+        uint256 interestRateMode
+    );
+    event CollateralReturnedToMinter(uint256 amount);
+    event RewardsClaimed();
+    event AMOMinterSet(address indexed new_minter);
+    event ERC20Recovered(address tokenAddress, uint256 tokenAmount);
+    event ExecuteCalled(address indexed to, uint256 value, bytes data);
 
     /* ========== CONSTRUCTOR ========== */
 
@@ -65,66 +89,6 @@ contract AaveAMO is Ownable {
         _;
     }
 
-    /* ========== VIEWS ========== */
-
-    function showDebtsByAsset(
-        address asset_address
-    ) public view returns (uint256[3] memory debts) {
-        require(
-            aave_borrow_asset_check[asset_address],
-            "Asset is not available in borrowed list."
-        );
-        (
-            ,
-            uint256 currentStableDebt,
-            uint256 currentVariableDebt,
-            ,
-            ,
-            ,
-            ,
-            ,
-
-        ) = AAVEPoolDataProvider.getUserReserveData(
-                asset_address,
-                address(this)
-            );
-        debts[0] = currentStableDebt + currentVariableDebt; // Total debt balance
-        ERC20 _asset = ERC20(asset_address);
-        debts[1] = _asset.balanceOf(address(this)); // AMO Asset balance
-        debts[2] = 0; // Removed aaveToken reference (not applicable without aToken)
-    }
-
-    /// @notice Shows AMO claimable rewards
-    /// @return rewards    Array of rewards addresses
-    /// @return amounts    Array of rewards balance
-    function showClaimableRewards()
-        external
-        view
-        returns (address[] memory rewards, uint256[] memory amounts)
-    {
-        address[] memory allTokens = aave_pool.getReservesList();
-        (rewards, amounts) = AAVERewardsController.getAllUserRewards(
-            allTokens,
-            address(this)
-        );
-    }
-
-    /// @notice Shows the rewards balance of the AMO
-    /// @return rewards     Array of rewards addresses
-    /// @return amounts     Array of rewards balance
-    function showRewardsBalance()
-        external
-        view
-        returns (address[] memory rewards, uint256[] memory amounts)
-    {
-        rewards = AAVERewardsController.getRewardsList();
-        amounts = new uint256[](rewards.length);
-
-        for (uint256 i = 0; i < rewards.length; i++) {
-            amounts[i] = ERC20(rewards[i]).balanceOf(address(this));
-        }
-    }
-
     /* ========== AAVE V3 + Rewards ========== */
 
     /// @notice Function to deposit other assets as collateral to Aave pool
@@ -137,6 +101,8 @@ contract AaveAMO is Ownable {
         ERC20 token = ERC20(collateral_address);
         token.safeApprove(address(aave_pool), amount);
         aave_pool.deposit(collateral_address, amount, address(this), 0);
+
+        emit CollateralDeposited(collateral_address, amount);
     }
 
     /// @notice Function to withdraw other assets as collateral from Aave pool
@@ -147,6 +113,8 @@ contract AaveAMO is Ownable {
         uint256 aToken_amount
     ) public onlyByOwnGov {
         aave_pool.withdraw(collateral_address, aToken_amount, address(this));
+
+        emit CollateralWithdrawn(collateral_address, aToken_amount);
     }
 
     /// @notice Function to borrow other assets from Aave pool
@@ -167,6 +135,8 @@ contract AaveAMO is Ownable {
         );
         aave_borrow_asset_check[asset] = true;
         aave_borrow_asset_list.push(asset);
+
+        emit Borrowed(asset, borrow_amount, interestRateMode);
     }
 
     /// @notice Function to repay other assets to Aave pool
@@ -181,18 +151,22 @@ contract AaveAMO is Ownable {
         ERC20 token = ERC20(asset);
         token.safeApprove(address(aave_pool), repay_amount);
         aave_pool.repay(asset, repay_amount, interestRateMode, address(this));
+
+        emit Repaid(asset, repay_amount, interestRateMode);
     }
 
+    /// @notice Function to claim all rewards
     function claimAllRewards() external {
         address[] memory allTokens = aave_pool.getReservesList();
         AAVERewardsController.claimAllRewards(allTokens, address(this));
+
+        emit RewardsClaimed();
     }
 
     /* ========== RESTRICTED GOVERNANCE FUNCTIONS ========== */
 
     /// @notice Function to return collateral to the minter
     /// @param collat_amount Amount of collateral to return to the minter
-    /// @notice If collat_amount is 0, the function will return all the collateral in the AMO
     function returnCollateralToMinter(
         uint256 collat_amount
     ) public onlyByOwnGov {
@@ -207,12 +181,16 @@ contract AaveAMO is Ownable {
 
         // Call receiveCollatFromAMO from the UbiquityAMOMinter
         amo_minter.receiveCollatFromAMO(collat_amount);
+
+        emit CollateralReturnedToMinter(collat_amount);
     }
 
     function setAMOMinter(address _amo_minter_address) external onlyByOwnGov {
         amo_minter = UbiquityAMOMinter(_amo_minter_address);
         timelock_address = amo_minter.timelock_address();
         require(timelock_address != address(0), "Invalid timelock");
+
+        emit AMOMinterSet(_amo_minter_address);
     }
 
     // Emergency ERC20 recovery function
@@ -221,6 +199,8 @@ contract AaveAMO is Ownable {
         uint256 tokenAmount
     ) external onlyByOwnGov {
         ERC20(tokenAddress).safeTransfer(msg.sender, tokenAmount);
+
+        emit ERC20Recovered(tokenAddress, tokenAmount);
     }
 
     // Emergency generic proxy - allows owner to execute arbitrary calls on this contract
@@ -230,6 +210,8 @@ contract AaveAMO is Ownable {
         bytes calldata _data
     ) external onlyByOwnGov returns (bool, bytes memory) {
         (bool success, bytes memory result) = _to.call{value: _value}(_data);
+
+        emit ExecuteCalled(_to, _value, _data);
         return (success, result);
     }
 }
