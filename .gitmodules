@@ -38,3 +38,9 @@
 	path = packages/contracts/lib/chainlink-brownie-contracts
 	url = https://github.com/smartcontractkit/chainlink-brownie-contracts
 	branch= main
+[submodule "packages/contracts/lib/aave-v3-core"]
+	path = packages/contracts/lib/aave-v3-core
+	url = https://github.com/aave/aave-v3-core
+[submodule "packages/contracts/lib/aave-v3-periphery"]
+	path = packages/contracts/lib/aave-v3-periphery
+	url = https://github.com/aave/aave-v3-periphery

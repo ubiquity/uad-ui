@@ -9,3 +9,5 @@ solidity-linked-list/=lib/solidity-linked-list
 abdk/=lib/abdk-libraries-solidity/
 operator-filter-registry/=lib/operator-filter-registry/src
 @chainlink/=lib/chainlink-brownie-contracts/contracts/src/v0.8/
+@aavev3-core/contracts/=lib/aave-v3-core/contracts
+@aavev3-periphery/contracts/=lib/aave-v3-periphery/contracts
