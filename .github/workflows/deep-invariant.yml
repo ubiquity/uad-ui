@@ -1,0 +1,31 @@
+name: Invariant Tests
+on:
+  push:
+    branches:
+      - development
+    paths:
+      - '**.sol'
+
+jobs:
+  invariant-tests:
+    name: Run Invariant Tests
+    runs-on: ubuntu-22.04
+    env:
+      FOUNDRY_PROFILE: intense
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Setup Foundry
+        uses: foundry-rs/toolchain@v1
+        with:
+          version: nightly-5be158ba6dc7c79a8f6302026fe60fc01606b33b
+      
+      - name: Forge install
+        working-directory: packages/contracts
+        run: forge install
+
+      - name: Run Invariant Tests
+        working-directory: packages/contracts
+        run: forge test
