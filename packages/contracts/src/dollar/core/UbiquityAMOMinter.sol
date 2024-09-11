@@ -101,16 +101,16 @@ contract UbiquityAMOMinter is Ownable {
     ) external validAMO(msg.sender) {
         int256 collat_amt_i256 = int256(collat_amount);
 
-        // Receive first
+        // First, update the balances
+        collat_borrowed_balances[msg.sender] -= collat_amt_i256;
+        collat_borrowed_sum -= collat_amt_i256;
+
+        // Then perform transfer from
         collateral_token.safeTransferFrom(
             msg.sender,
             address(pool),
             collat_amount
         );
-
-        // Then update the balances
-        collat_borrowed_balances[msg.sender] -= collat_amt_i256;
-        collat_borrowed_sum -= collat_amt_i256;
 
         emit CollateralReceivedFromAMO(msg.sender, collat_amount);
     }
