@@ -5,7 +5,7 @@ import "../facets/UbiquityPoolFacet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract PoolLiquidityMonitor is Ownable {
-    UbiquityPoolFacet public ubiquityPoolFacet;
+    UbiquityPoolFacet public immutable ubiquityPoolFacet;
     address public defenderRelayer;
 
     event LiquidityChecked(uint256 currentLiquidity);
