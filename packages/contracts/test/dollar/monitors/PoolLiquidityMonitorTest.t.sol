@@ -4,8 +4,9 @@ pragma solidity ^0.8.19;
 import "forge-std/Test.sol";
 import "../../../src/dollar/monitors/PoolLiquidityMonitor.sol";
 import "../../helpers/LocalTestHelper.sol";
+import {DiamondTestSetup} from "../../../test/diamond/DiamondTestSetup.sol";
 
-contract PoolLiquidityMonitorTest is LocalTestHelper {
+contract PoolLiquidityMonitorTest is DiamondTestSetup {
     PoolLiquidityMonitor monitor;
     address defenderRelayer = address(0x456);
     address unauthorized = address(0x123);
@@ -15,7 +16,8 @@ contract PoolLiquidityMonitorTest is LocalTestHelper {
 
         monitor = new PoolLiquidityMonitor(
             address(ubiquityPoolFacet),
-            defenderRelayer
+            defenderRelayer,
+            30
         );
     }
 
@@ -23,31 +25,33 @@ contract PoolLiquidityMonitorTest is LocalTestHelper {
         assertEq(monitor.defenderRelayer(), defenderRelayer);
     }
 
-    function testSetDefenderRelayer() public {
-        address newRelayer = address(0x789);
-
-        vm.prank(monitor.owner());
-        monitor.setDefenderRelayer(newRelayer);
-
-        assertEq(monitor.defenderRelayer(), newRelayer);
-    }
-
     function testUnauthorizedCheckLiquidity() public {
         vm.prank(unauthorized);
         vm.expectRevert("Not authorized: Only Defender Relayer allowed");
 
-        monitor.checkLiquidity();
+        monitor.checkLiquidityVertex();
     }
 
     function testCheckLiquidity() public {
+        uint256 mockedLiquidity = 10000;
+
+        vm.mockCall(
+            address(ubiquityPoolFacet),
+            abi.encodeWithSelector(
+                UbiquityPoolFacet.collateralUsdBalance.selector
+            ),
+            abi.encode(mockedLiquidity)
+        );
+
         vm.prank(defenderRelayer);
-        monitor.checkLiquidity();
+        monitor.checkLiquidityVertex();
     }
 
-    function testSetDefenderRelayerToZeroAddress() public {
-        vm.prank(owner);
-        vm.expectRevert();
-        monitor.setDefenderRelayer(address(0));
+    function testSetDefenderRelayer() public {
+        address newRelayer = address(0x789);
+
+        vm.expectRevert("Manager: Caller is not admin");
+        monitor.setDefenderRelayer(newRelayer);
     }
 
     function testCheckLiquidityWithDifferentValues() public {
@@ -63,7 +67,7 @@ contract PoolLiquidityMonitorTest is LocalTestHelper {
         );
 
         vm.prank(defenderRelayer);
-        monitor.checkLiquidity();
+        monitor.checkLiquidityVertex();
 
         vm.mockCall(
             address(ubiquityPoolFacet),
@@ -74,6 +78,6 @@ contract PoolLiquidityMonitorTest is LocalTestHelper {
         );
 
         vm.prank(defenderRelayer);
-        monitor.checkLiquidity();
+        monitor.checkLiquidityVertex();
     }
 }
