@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v3
       
       - name: Setup Foundry
-        uses: foundry-rs/toolchain@v1
+        uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly-5be158ba6dc7c79a8f6302026fe60fc01606b33b
       
@@ -26,6 +26,6 @@ jobs:
         working-directory: packages/contracts
         run: forge install
 
-      - name: Run Invariant Tests
+      - name: Run Deep Invariant Tests
         working-directory: packages/contracts
-        run: forge test
+        run: forge test --match-path "test/invariant/**/*"

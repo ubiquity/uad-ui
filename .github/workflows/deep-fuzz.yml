@@ -28,4 +28,4 @@ jobs:
 
       - name: Deep Fuzz Solidity Contracts
         working-directory: packages/contracts
-        run: forge test
+        run: forge test --match-path "test/fuzz/**/*"
