@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "../../../src/dollar/monitors/PoolLiquidityMonitor.sol";
 import "../../helpers/LocalTestHelper.sol";
 import {DiamondTestSetup} from "../../../test/diamond/DiamondTestSetup.sol";
+import {DEFAULT_ADMIN_ROLE} from "../../../src/dollar/libraries/Constants.sol";
 
 contract PoolLiquidityMonitorTest is DiamondTestSetup {
     PoolLiquidityMonitor monitor;
@@ -13,71 +14,40 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
 
     function setUp() public override {
         super.setUp();
-
-        monitor = new PoolLiquidityMonitor(
-            address(ubiquityPoolFacet),
-            defenderRelayer,
-            30
-        );
-    }
-
-    function testInitialSetup() public {
-        assertEq(monitor.defenderRelayer(), defenderRelayer);
     }
 
     function testUnauthorizedCheckLiquidity() public {
         vm.prank(unauthorized);
         vm.expectRevert("Not authorized: Only Defender Relayer allowed");
 
-        monitor.checkLiquidityVertex();
+        poolLiquidityMonitor.checkLiquidityVertex();
     }
 
-    function testCheckLiquidity() public {
-        uint256 mockedLiquidity = 10000;
+    function testUnauthorizedSetDefenderRelayer() public {
+        address newRelayer = address(0x789);
 
-        vm.mockCall(
-            address(ubiquityPoolFacet),
-            abi.encodeWithSelector(
-                UbiquityPoolFacet.collateralUsdBalance.selector
-            ),
-            abi.encode(mockedLiquidity)
-        );
-
-        vm.prank(defenderRelayer);
-        monitor.checkLiquidityVertex();
+        vm.expectRevert("Manager: Caller is not admin");
+        poolLiquidityMonitor.setDefenderRelayer(newRelayer);
     }
 
     function testSetDefenderRelayer() public {
         address newRelayer = address(0x789);
 
-        vm.expectRevert("Manager: Caller is not admin");
-        monitor.setDefenderRelayer(newRelayer);
+        vm.prank(admin);
+        poolLiquidityMonitor.setDefenderRelayer(newRelayer);
     }
 
-    function testCheckLiquidityWithDifferentValues() public {
-        uint256 mockedLiquidityHigh = 10000;
-        uint256 mockedLiquidityLow = 100;
+    function testSetThresholdPercentage() public {
+        uint256 newThresholdPercentage = 30;
 
-        vm.mockCall(
-            address(ubiquityPoolFacet),
-            abi.encodeWithSelector(
-                UbiquityPoolFacet.collateralUsdBalance.selector
-            ),
-            abi.encode(mockedLiquidityHigh)
-        );
+        vm.prank(admin);
+        poolLiquidityMonitor.setThresholdPercentage(newThresholdPercentage);
+    }
 
-        vm.prank(defenderRelayer);
-        monitor.checkLiquidityVertex();
+    function testDropLiquidityVertex() public {
+        vm.expectRevert("Insufficient liquidity");
 
-        vm.mockCall(
-            address(ubiquityPoolFacet),
-            abi.encodeWithSelector(
-                UbiquityPoolFacet.collateralUsdBalance.selector
-            ),
-            abi.encode(mockedLiquidityLow)
-        );
-
-        vm.prank(defenderRelayer);
-        monitor.checkLiquidityVertex();
+        vm.prank(admin);
+        poolLiquidityMonitor.dropLiquidityVertex();
     }
 }

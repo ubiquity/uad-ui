@@ -4,30 +4,23 @@ pragma solidity ^0.8.19;
 import "../facets/UbiquityPoolFacet.sol";
 import {Modifiers} from "../libraries/LibAppStorage.sol";
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import {DEFAULT_ADMIN_ROLE} from "../libraries/Constants.sol";
+import {LibUbiquityPool} from "../libraries/LibUbiquityPool.sol";
+import "forge-std/console.sol";
 
 contract PoolLiquidityMonitor is Modifiers {
     using SafeMath for uint256;
 
-    UbiquityPoolFacet public immutable ubiquityPoolFacet;
+    UbiquityPoolFacet public ubiquityPoolFacet;
     address public defenderRelayer;
     uint256 public liquidityVertex;
-    bool public paused;
+    bool public monitorPaused;
     uint256 public thresholdPercentage;
 
     event LiquidityVertexUpdated(uint256 collateralLiquidity);
     event MonitorPaused(uint256 collateralLiquidity, uint256 diffPercentage);
     event VertexDropped();
     event PausedToggled(bool paused);
-
-    constructor(
-        address _ubiquityPoolFacetAddress,
-        address _defenderRelayer,
-        uint256 _thresholdPercentage
-    ) {
-        ubiquityPoolFacet = UbiquityPoolFacet(_ubiquityPoolFacetAddress);
-        defenderRelayer = _defenderRelayer;
-        thresholdPercentage = _thresholdPercentage;
-    }
 
     modifier onlyAuthorized() {
         require(
@@ -50,12 +43,12 @@ contract PoolLiquidityMonitor is Modifiers {
     }
 
     function togglePaused() external onlyAdmin {
-        paused = !paused;
-        emit PausedToggled(paused);
+        monitorPaused = !monitorPaused;
+        emit PausedToggled(monitorPaused);
     }
 
     function dropLiquidityVertex() external onlyAdmin {
-        uint256 currentCollateralLiquidity = ubiquityPoolFacet
+        uint256 currentCollateralLiquidity = LibUbiquityPool
             .collateralUsdBalance();
 
         require(currentCollateralLiquidity > 0, "Insufficient liquidity");
@@ -66,11 +59,11 @@ contract PoolLiquidityMonitor is Modifiers {
     }
 
     function checkLiquidityVertex() external onlyAuthorized {
-        uint256 currentCollateralLiquidity = ubiquityPoolFacet
+        uint256 currentCollateralLiquidity = LibUbiquityPool
             .collateralUsdBalance();
 
         require(currentCollateralLiquidity > 0, "Insufficient liquidity");
-        require(!paused, "Monitor paused");
+        require(!monitorPaused, "Monitor paused");
 
         if (currentCollateralLiquidity > liquidityVertex) {
             liquidityVertex = currentCollateralLiquidity;
@@ -83,7 +76,7 @@ contract PoolLiquidityMonitor is Modifiers {
                 .div(liquidityVertex);
 
             if (liquidityDiffPercentage >= thresholdPercentage) {
-                paused = true;
+                monitorPaused = true;
 
                 // Pause the UbiquityDollarToken
                 // Pause LibUbiquityPool by disabling collateral
