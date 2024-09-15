@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "../facets/UbiquityPoolFacet.sol";
 import {Modifiers} from "../libraries/LibAppStorage.sol";
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import {DEFAULT_ADMIN_ROLE} from "../libraries/Constants.sol";
@@ -11,7 +10,6 @@ import "forge-std/console.sol";
 contract PoolLiquidityMonitor is Modifiers {
     using SafeMath for uint256;
 
-    UbiquityPoolFacet public ubiquityPoolFacet;
     address public defenderRelayer;
     uint256 public liquidityVertex;
     bool public monitorPaused;
