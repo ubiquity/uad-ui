@@ -14,27 +14,9 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
 
     function setUp() public override {
         super.setUp();
-    }
-
-    function testUnauthorizedCheckLiquidity() public {
-        vm.prank(unauthorized);
-        vm.expectRevert("Not authorized: Only Defender Relayer allowed");
-
-        poolLiquidityMonitor.checkLiquidityVertex();
-    }
-
-    function testUnauthorizedSetDefenderRelayer() public {
-        address newRelayer = address(0x789);
-
-        vm.expectRevert("Manager: Caller is not admin");
-        poolLiquidityMonitor.setDefenderRelayer(newRelayer);
-    }
-
-    function testSetDefenderRelayer() public {
-        address newRelayer = address(0x789);
 
         vm.prank(admin);
-        poolLiquidityMonitor.setDefenderRelayer(newRelayer);
+        poolLiquidityMonitor.setDefenderRelayer(defenderRelayer);
     }
 
     function testSetThresholdPercentage() public {
@@ -44,10 +26,60 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         poolLiquidityMonitor.setThresholdPercentage(newThresholdPercentage);
     }
 
+    function testUnauthorizedSetThresholdPercentage() public {
+        uint256 newThresholdPercentage = 30;
+
+        vm.expectRevert("Manager: Caller is not admin");
+        poolLiquidityMonitor.setThresholdPercentage(newThresholdPercentage);
+    }
+
     function testDropLiquidityVertex() public {
         vm.expectRevert("Insufficient liquidity");
 
         vm.prank(admin);
         poolLiquidityMonitor.dropLiquidityVertex();
+    }
+
+    function testUnauthorizedDropLiquidityVertex() public {
+        vm.expectRevert("Manager: Caller is not admin");
+        poolLiquidityMonitor.dropLiquidityVertex();
+    }
+
+    function testTogglePaused() public {
+        vm.prank(admin);
+        poolLiquidityMonitor.togglePaused();
+    }
+
+    function testUnauthorizedTogglePaused() public {
+        vm.expectRevert("Manager: Caller is not admin");
+        poolLiquidityMonitor.togglePaused();
+    }
+
+    function testUnauthorizedCheckLiquidity() public {
+        vm.prank(unauthorized);
+        vm.expectRevert("Not authorized: Only Defender Relayer allowed");
+
+        poolLiquidityMonitor.checkLiquidityVertex();
+    }
+
+    function testCheckLiquidity() public {
+        vm.expectRevert("Insufficient liquidity");
+
+        vm.prank(defenderRelayer);
+        poolLiquidityMonitor.checkLiquidityVertex();
+    }
+
+    function testSetDefenderRelayer() public {
+        address newRelayer = address(0x789);
+
+        vm.prank(admin);
+        poolLiquidityMonitor.setDefenderRelayer(newRelayer);
+    }
+
+    function testUnauthorizedSetDefenderRelayer() public {
+        address newRelayer = address(0x789);
+
+        vm.expectRevert("Manager: Caller is not admin");
+        poolLiquidityMonitor.setDefenderRelayer(newRelayer);
     }
 }
