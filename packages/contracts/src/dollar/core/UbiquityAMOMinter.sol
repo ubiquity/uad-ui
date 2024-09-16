@@ -18,7 +18,7 @@ contract UbiquityAMOMinter is Ownable {
     // Collateral related
     address public immutable collateral_address;
     uint256 public immutable missing_decimals;
-    int256 public collat_borrow_cap = int256(10000000e6);
+    int256 public collat_borrow_cap = int256(100000e18);
 
     // Collateral borrowed balances
     mapping(address => int256) public collat_borrowed_balances;
