@@ -13,7 +13,6 @@ contract AaveAMO is Ownable {
     using SafeERC20 for ERC20;
 
     /* ========== STATE VARIABLES ========== */
-    address public timelock_address;
 
     // Constants
     UbiquityAMOMinter private amo_minter;
@@ -37,6 +36,7 @@ contract AaveAMO is Ownable {
     mapping(address => bool) public aave_borrow_asset_check; // Mapping is also used for faster verification
 
     /* ========== EVENTS ========== */
+
     event CollateralDeposited(
         address indexed collateral_address,
         uint256 amount
@@ -64,25 +64,20 @@ contract AaveAMO is Ownable {
     /* ========== CONSTRUCTOR ========== */
 
     constructor(address _owner_address, address _amo_minter_address) {
+        require(_owner_address != address(0), "Owner address cannot be zero");
+        require(
+            _amo_minter_address != address(0),
+            "AMO minter address cannot be zero"
+        );
+
         // Set owner
         transferOwnership(_owner_address);
 
         // Set AMO minter
         amo_minter = UbiquityAMOMinter(_amo_minter_address);
-
-        // Get the timelock address from the minter
-        timelock_address = amo_minter.timelock_address();
     }
 
     /* ========== MODIFIERS ========== */
-
-    modifier onlyByOwnGov() {
-        require(
-            msg.sender == timelock_address || msg.sender == owner(),
-            "Not owner or timelock"
-        );
-        _;
-    }
 
     modifier onlyByMinter() {
         require(msg.sender == address(amo_minter), "Not minter");
@@ -97,7 +92,7 @@ contract AaveAMO is Ownable {
     function aaveDepositCollateral(
         address collateral_address,
         uint256 amount
-    ) public onlyByOwnGov {
+    ) public onlyOwner {
         ERC20 token = ERC20(collateral_address);
         token.safeApprove(address(aave_pool), amount);
         aave_pool.deposit(collateral_address, amount, address(this), 0);
@@ -111,7 +106,7 @@ contract AaveAMO is Ownable {
     function aaveWithdrawCollateral(
         address collateral_address,
         uint256 aToken_amount
-    ) public onlyByOwnGov {
+    ) public onlyOwner {
         aave_pool.withdraw(collateral_address, aToken_amount, address(this));
 
         emit CollateralWithdrawn(collateral_address, aToken_amount);
@@ -125,7 +120,7 @@ contract AaveAMO is Ownable {
         address asset,
         uint256 borrow_amount,
         uint256 interestRateMode
-    ) public onlyByOwnGov {
+    ) public onlyOwner {
         aave_pool.borrow(
             asset,
             borrow_amount,
@@ -147,7 +142,7 @@ contract AaveAMO is Ownable {
         address asset,
         uint256 repay_amount,
         uint256 interestRateMode
-    ) public onlyByOwnGov {
+    ) public onlyOwner {
         ERC20 token = ERC20(asset);
         token.safeApprove(address(aave_pool), repay_amount);
         aave_pool.repay(asset, repay_amount, interestRateMode, address(this));
@@ -167,9 +162,7 @@ contract AaveAMO is Ownable {
 
     /// @notice Function to return collateral to the minter
     /// @param collat_amount Amount of collateral to return to the minter
-    function returnCollateralToMinter(
-        uint256 collat_amount
-    ) public onlyByOwnGov {
+    function returnCollateralToMinter(uint256 collat_amount) public onlyOwner {
         ERC20 collateral_token = amo_minter.collateral_token();
 
         if (collat_amount == 0) {
@@ -185,10 +178,8 @@ contract AaveAMO is Ownable {
         emit CollateralReturnedToMinter(collat_amount);
     }
 
-    function setAMOMinter(address _amo_minter_address) external onlyByOwnGov {
+    function setAMOMinter(address _amo_minter_address) external onlyOwner {
         amo_minter = UbiquityAMOMinter(_amo_minter_address);
-        timelock_address = amo_minter.timelock_address();
-        require(timelock_address != address(0), "Invalid timelock");
 
         emit AMOMinterSet(_amo_minter_address);
     }
@@ -197,7 +188,7 @@ contract AaveAMO is Ownable {
     function recoverERC20(
         address tokenAddress,
         uint256 tokenAmount
-    ) external onlyByOwnGov {
+    ) external onlyOwner {
         ERC20(tokenAddress).safeTransfer(msg.sender, tokenAmount);
 
         emit ERC20Recovered(tokenAddress, tokenAmount);
@@ -208,7 +199,7 @@ contract AaveAMO is Ownable {
         address _to,
         uint256 _value,
         bytes calldata _data
-    ) external onlyByOwnGov returns (bool, bytes memory) {
+    ) external onlyOwner returns (bool, bytes memory) {
         (bool success, bytes memory result) = _to.call{value: _value}(_data);
 
         emit ExecuteCalled(_to, _value, _data);
