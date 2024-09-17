@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
-import "../../../src/dollar/monitors/PoolLiquidityMonitor.sol";
+import "../../../src/dollar/core/UbiquityPoolSecurityMonitor.sol";
 import "../../helpers/LocalTestHelper.sol";
 import {DiamondTestSetup} from "../../../test/diamond/DiamondTestSetup.sol";
 import {DEFAULT_ADMIN_ROLE} from "../../../src/dollar/libraries/Constants.sol";
@@ -10,9 +10,10 @@ import {MockChainLinkFeed} from "../../../src/dollar/mocks/MockChainLinkFeed.sol
 import {MockERC20} from "../../../src/dollar/mocks/MockERC20.sol";
 import {MockCurveStableSwapNG} from "../../../src/dollar/mocks/MockCurveStableSwapNG.sol";
 import {MockCurveTwocryptoOptimized} from "../../../src/dollar/mocks/MockCurveTwocryptoOptimized.sol";
+import {ERC20Ubiquity} from "../../../src/dollar/core/ERC20Ubiquity.sol";
 
 contract PoolLiquidityMonitorTest is DiamondTestSetup {
-    PoolLiquidityMonitor monitor;
+    UbiquityPoolSecurityMonitor monitor;
     address defenderRelayer = address(0x456);
     address unauthorized = address(0x123);
 
@@ -137,7 +138,14 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
             address(curveDollarPlainPool)
         );
 
-        poolLiquidityMonitor.setDefenderRelayer(defenderRelayer);
+        accessControlFacet.grantRole(DEFENDER_RELAYER_ROLE, defenderRelayer);
+
+        // Initialize the UbiquityPoolSecurityMonitor contract
+        monitor = new UbiquityPoolSecurityMonitor();
+        monitor.initialize(
+            address(accessControlFacet),
+            address(ubiquityPoolFacet)
+        );
 
         // stop being admin
         vm.stopPrank();
@@ -155,83 +163,77 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     }
 
     function testSetThresholdPercentage() public {
-        uint256 newThresholdPercentage = 30;
+        uint256 newThresholdPercentage = 20;
 
         vm.prank(admin);
-        poolLiquidityMonitor.setThresholdPercentage(newThresholdPercentage);
+        monitor.setThresholdPercentage(newThresholdPercentage);
     }
 
     function testUnauthorizedSetThresholdPercentage() public {
         uint256 newThresholdPercentage = 30;
 
-        vm.expectRevert("Manager: Caller is not admin");
-        poolLiquidityMonitor.setThresholdPercentage(newThresholdPercentage);
+        vm.expectRevert("Ubiquity Pool Security Monitor: not admin");
+        monitor.setThresholdPercentage(newThresholdPercentage);
     }
 
     function testDropLiquidityVertex() public {
         vm.prank(admin);
-        poolLiquidityMonitor.dropLiquidityVertex();
+        monitor.dropLiquidityVertex();
     }
 
     function testUnauthorizedDropLiquidityVertex() public {
-        vm.expectRevert("Manager: Caller is not admin");
-        poolLiquidityMonitor.dropLiquidityVertex();
+        vm.expectRevert("Ubiquity Pool Security Monitor: not admin");
+        monitor.dropLiquidityVertex();
     }
 
     function testTogglePaused() public {
         vm.prank(admin);
-        poolLiquidityMonitor.togglePaused();
+        monitor.togglePaused();
     }
 
     function testUnauthorizedTogglePaused() public {
-        vm.expectRevert("Manager: Caller is not admin");
-        poolLiquidityMonitor.togglePaused();
-    }
-
-    function testSetDefenderRelayer() public {
-        address newRelayer = address(0x789);
-
-        vm.prank(admin);
-        poolLiquidityMonitor.setDefenderRelayer(newRelayer);
-    }
-
-    function testUnauthorizedSetDefenderRelayer() public {
-        address newRelayer = address(0x789);
-
-        vm.expectRevert("Manager: Caller is not admin");
-        poolLiquidityMonitor.setDefenderRelayer(newRelayer);
+        vm.expectRevert("Ubiquity Pool Security Monitor: not admin");
+        monitor.togglePaused();
     }
 
     function testCheckLiquidity() public {
         vm.prank(defenderRelayer);
-        poolLiquidityMonitor.checkLiquidityVertex();
+        monitor.checkLiquidityVertex();
     }
 
     function testUnauthorizedCheckLiquidity() public {
         vm.prank(unauthorized);
-        vm.expectRevert("Not authorized: Only Defender Relayer allowed");
+        vm.expectRevert("Ubiquity Pool Security Monitor: not defender relayer");
 
-        poolLiquidityMonitor.checkLiquidityVertex();
+        monitor.checkLiquidityVertex();
     }
 
     function testLiquidityDropBelowVertex() public {
         vm.prank(defenderRelayer);
-        poolLiquidityMonitor.checkLiquidityVertex();
+        monitor.checkLiquidityVertex();
 
         curveDollarPlainPool.updateMockParams(0.99e18);
 
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(0, 5e17, 0, 0);
 
-        // Call the checkLiquidityVertex function to test behavior after the liquidity drop
         vm.prank(defenderRelayer);
-        poolLiquidityMonitor.checkLiquidityVertex();
+        monitor.checkLiquidityVertex();
 
-        // Assert that the liquidity monitor paused after detecting a large drop
-        bool monitorPaused = poolLiquidityMonitor.monitorPaused();
+        bool monitorPaused = monitor.monitorPaused();
         assertTrue(
             monitorPaused,
             "Monitor should be paused after liquidity drop"
         );
+    }
+
+    function testCheckLiquidityWhenPaused() public {
+        vm.prank(admin);
+        monitor.togglePaused();
+
+        vm.expectRevert("Monitor paused");
+
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
     }
 }

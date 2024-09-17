@@ -33,7 +33,6 @@ import {MockERC20} from "../../src/dollar/mocks/MockERC20.sol";
 import {DiamondInit} from "../../src/dollar/upgradeInitializers/DiamondInit.sol";
 import {DiamondTestHelper} from "../helpers/DiamondTestHelper.sol";
 import {UUPSTestHelper} from "../helpers/UUPSTestHelper.sol";
-import {PoolLiquidityMonitor} from "../../src/dollar/monitors/PoolLiquidityMonitor.sol";
 import {CREDIT_NFT_MANAGER_ROLE, CREDIT_TOKEN_BURNER_ROLE, CREDIT_TOKEN_MINTER_ROLE, CURVE_DOLLAR_MANAGER_ROLE, DOLLAR_TOKEN_BURNER_ROLE, DOLLAR_TOKEN_MINTER_ROLE, GOVERNANCE_TOKEN_BURNER_ROLE, GOVERNANCE_TOKEN_MANAGER_ROLE, GOVERNANCE_TOKEN_MINTER_ROLE, STAKING_SHARE_MINTER_ROLE} from "../../src/dollar/libraries/Constants.sol";
 
 /**
@@ -64,7 +63,6 @@ abstract contract DiamondTestSetup is DiamondTestHelper, UUPSTestHelper {
     StakingFacet stakingFacet;
     StakingFormulasFacet stakingFormulasFacet;
     UbiquityPoolFacet ubiquityPoolFacet;
-    PoolLiquidityMonitor poolLiquidityMonitor;
 
     // diamond facet implementation instances (should not be used in tests, use only on upgrades)
     AccessControlFacet accessControlFacetImplementation;
@@ -86,7 +84,6 @@ abstract contract DiamondTestSetup is DiamondTestHelper, UUPSTestHelper {
     StakingFacet stakingFacetImplementation;
     StakingFormulasFacet stakingFormulasFacetImplementation;
     UbiquityPoolFacet ubiquityPoolFacetImplementation;
-    PoolLiquidityMonitor poolLiquidityMonitorImplementation;
 
     // facet names with addresses
     string[] facetNames;
@@ -119,7 +116,6 @@ abstract contract DiamondTestSetup is DiamondTestHelper, UUPSTestHelper {
     bytes4[] selectorsOfStakingFacet;
     bytes4[] selectorsOfStakingFormulasFacet;
     bytes4[] selectorsOfUbiquityPoolFacet;
-    bytes4[] selectorsOfPoolLiquidityMonitor;
 
     /// @notice Deploys diamond and connects facets
     function setUp() public virtual {
@@ -189,10 +185,6 @@ abstract contract DiamondTestSetup is DiamondTestHelper, UUPSTestHelper {
             "/out/UbiquityPoolFacet.sol/UbiquityPoolFacet.json"
         );
 
-        selectorsOfPoolLiquidityMonitor = getSelectorsFromAbi(
-            "/out/PoolLiquidityMonitor.sol/PoolLiquidityMonitor.json"
-        );
-
         // deploy facet implementation instances
         accessControlFacetImplementation = new AccessControlFacet();
         bondingCurveFacetImplementation = new BondingCurveFacet();
@@ -213,7 +205,6 @@ abstract contract DiamondTestSetup is DiamondTestHelper, UUPSTestHelper {
         stakingFacetImplementation = new StakingFacet();
         stakingFormulasFacetImplementation = new StakingFormulasFacet();
         ubiquityPoolFacetImplementation = new UbiquityPoolFacet();
-        poolLiquidityMonitorImplementation = new PoolLiquidityMonitor();
 
         // prepare diamond init args
         diamondInit = new DiamondInit();
@@ -236,8 +227,7 @@ abstract contract DiamondTestSetup is DiamondTestHelper, UUPSTestHelper {
             "OwnershipFacet",
             "StakingFacet",
             "StakingFormulasFacet",
-            "UbiquityPoolFacet",
-            "PoolLiquidityMonitor"
+            "UbiquityPoolFacet"
         ];
         DiamondInit.Args memory initArgs = DiamondInit.Args({
             admin: admin,
@@ -257,7 +247,7 @@ abstract contract DiamondTestSetup is DiamondTestHelper, UUPSTestHelper {
             )
         });
 
-        FacetCut[] memory cuts = new FacetCut[](20);
+        FacetCut[] memory cuts = new FacetCut[](19);
 
         cuts[0] = (
             FacetCut({
@@ -399,14 +389,6 @@ abstract contract DiamondTestSetup is DiamondTestHelper, UUPSTestHelper {
             })
         );
 
-        cuts[19] = (
-            FacetCut({
-                facetAddress: address(poolLiquidityMonitorImplementation),
-                action: FacetCutAction.Add,
-                functionSelectors: selectorsOfPoolLiquidityMonitor
-            })
-        );
-
         // deploy diamond
         vm.prank(owner);
         diamond = new Diamond(_args, cuts);
@@ -437,7 +419,6 @@ abstract contract DiamondTestSetup is DiamondTestHelper, UUPSTestHelper {
         stakingFacet = StakingFacet(address(diamond));
         stakingFormulasFacet = StakingFormulasFacet(address(diamond));
         ubiquityPoolFacet = UbiquityPoolFacet(address(diamond));
-        poolLiquidityMonitor = PoolLiquidityMonitor(address(diamond));
 
         // get all addresses
         facetAddressList = diamondLoupeFacet.facetAddresses();
