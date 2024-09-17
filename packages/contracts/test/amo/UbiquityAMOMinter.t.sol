@@ -21,12 +21,13 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
     function setUp() public override {
         super.setUp();
 
+        // Initialize mock collateral token and price feed
         collateralToken = new MockERC20("Mock Collateral", "MCT", 18);
         collateralTokenPriceFeed = new MockChainLinkFeed();
 
         // Deploy UbiquityAMOMinter contract
         amoMinter = new UbiquityAMOMinter(
-            owner, // Owner address
+            owner,
             address(collateralToken), // Collateral token address
             0, // Collateral index
             address(ubiquityPoolFacet) // Pool address
@@ -39,21 +40,23 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
         vm.prank(owner);
         amoMinter.enableAMO(address(aaveAMO));
 
-        vm.startPrank(admin);
+        vm.startPrank(admin); // Prank as admin for pool setup
 
-        // add collateral token to the pool
-        uint256 poolCeiling = 500_000e18; // max 500_000 of collateral tokens is allowed
+        // Add collateral token to the pool with a ceiling
+        uint256 poolCeiling = 500_000e18;
         ubiquityPoolFacet.addCollateralToken(
             address(collateralToken),
             address(collateralTokenPriceFeed),
             poolCeiling
         );
 
+        // Enable collateral and register AMO Minter
         ubiquityPoolFacet.toggleCollateral(0);
-
         ubiquityPoolFacet.addAmoMinter(address(amoMinter));
 
+        // Mint collateral to the pool
         collateralToken.mint(address(ubiquityPoolFacet), 500_000e18);
+
         vm.stopPrank();
     }
 
