@@ -15,8 +15,9 @@ contract UbiquityAMOMinter is Ownable {
 
     // Collateral related
     address public immutable collateral_address;
+    uint256 public immutable collateralIndex; // Index of the collateral in the pool
     uint256 public immutable missing_decimals;
-    int256 public collat_borrow_cap = int256(100000e18);
+    int256 public collat_borrow_cap = int256(100_000e18);
 
     // Collateral borrowed balances
     mapping(address => int256) public collat_borrowed_balances;
@@ -30,6 +31,7 @@ contract UbiquityAMOMinter is Ownable {
     constructor(
         address _owner_address,
         address _collateral_address,
+        uint256 _collateralIndex,
         address _pool_address
     ) {
         require(_owner_address != address(0), "Owner address cannot be zero");
@@ -43,6 +45,7 @@ contract UbiquityAMOMinter is Ownable {
 
         // Collateral related
         collateral_address = _collateral_address;
+        collateralIndex = _collateralIndex;
         collateral_token = ERC20(_collateral_address);
         missing_decimals = uint(18) - collateral_token.decimals();
 
@@ -73,6 +76,12 @@ contract UbiquityAMOMinter is Ownable {
         address destination_amo,
         uint256 collat_amount
     ) external onlyOwner validAMO(destination_amo) {
+        // Check if the pool has enough collateral
+        require(
+            collateral_token.balanceOf(address(pool)) >= collat_amount,
+            "Insufficient balance"
+        );
+
         int256 collat_amount_i256 = int256(collat_amount);
 
         require(
@@ -120,6 +129,13 @@ contract UbiquityAMOMinter is Ownable {
     function setPool(address _pool_address) external onlyOwner {
         pool = IUbiquityPool(_pool_address);
         emit PoolSet(_pool_address);
+    }
+
+    /* =========== VIEWS ========== */
+
+    // Adheres to AMO minter pattern established in LibUbiquityPool
+    function collateralDollarBalance() external view returns (uint256) {
+        return uint256(collat_borrowed_sum);
     }
 
     /* ========== EVENTS ========== */
