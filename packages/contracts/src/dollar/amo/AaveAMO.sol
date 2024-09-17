@@ -15,21 +15,19 @@ contract AaveAMO is Ownable {
     /* ========== STATE VARIABLES ========== */
 
     // Constants
-    UbiquityAMOMinter private amo_minter;
+    UbiquityAMOMinter public amo_minter;
 
     // Pools and vaults
-    IPool private constant aave_pool =
-        IPool(0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2);
+    IPool public immutable aave_pool;
 
     // Reward Tokens
-    ERC20 private constant AAVE =
-        ERC20(0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9);
+    ERC20 public immutable AAVE;
 
-    IRewardsController private constant AAVERewardsController =
-        IRewardsController(0x8164Cc65827dcFe994AB23944CBC90e0aa80bFcb);
+    // Rewards Controller
+    IRewardsController public AAVERewardsController;
 
-    IPoolDataProvider private constant AAVEPoolDataProvider =
-        IPoolDataProvider(0x7B4EB56E7CD4b454BA8ff71E4518426369a138a3);
+    // Aave data provider
+    IPoolDataProvider public immutable AAVEPoolDataProvider;
 
     // Borrowed assets
     address[] public aave_borrow_asset_list;
@@ -37,11 +35,28 @@ contract AaveAMO is Ownable {
 
     /* ========== CONSTRUCTOR ========== */
 
-    constructor(address _owner_address, address _amo_minter_address) {
+    constructor(
+        address _owner_address,
+        address _amo_minter_address,
+        address _aave_pool,
+        address _aave,
+        address _aave_rewards_controller,
+        address _aave_pool_data_provider
+    ) {
         require(_owner_address != address(0), "Owner address cannot be zero");
         require(
             _amo_minter_address != address(0),
             "AMO minter address cannot be zero"
+        );
+        require(_aave_pool != address(0), "Aave pool address cannot be zero");
+        require(_aave != address(0), "AAVE address cannot be zero");
+        require(
+            _aave_rewards_controller != address(0),
+            "AAVE rewards controller address cannot be zero"
+        );
+        require(
+            _aave_pool_data_provider != address(0),
+            "AAVE pool data provider address cannot be zero"
         );
 
         // Set owner
@@ -49,6 +64,18 @@ contract AaveAMO is Ownable {
 
         // Set AMO minter
         amo_minter = UbiquityAMOMinter(_amo_minter_address);
+
+        // Set Aave pool
+        aave_pool = IPool(_aave_pool);
+
+        // Set AAVE
+        AAVE = ERC20(_aave);
+
+        // Set AAVE rewards controller
+        AAVERewardsController = IRewardsController(_aave_rewards_controller);
+
+        // Set AAVE pool data provider
+        AAVEPoolDataProvider = IPoolDataProvider(_aave_pool_data_provider);
     }
 
     /* ========== MODIFIERS ========== */

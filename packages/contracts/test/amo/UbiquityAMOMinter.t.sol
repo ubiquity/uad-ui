@@ -34,7 +34,14 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
         );
 
         // Deploy AaveAMO contract
-        aaveAMO = new AaveAMO(owner, address(amoMinter));
+        aaveAMO = new AaveAMO(
+            owner,
+            address(amoMinter),
+            address(1),
+            address(2),
+            address(3),
+            address(4)
+        );
 
         // Enable AaveAMO as a valid AMO
         vm.prank(owner);
