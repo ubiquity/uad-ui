@@ -24,7 +24,7 @@ contract AaveAMO is Ownable {
     ERC20 public immutable AAVE;
 
     // Rewards Controller
-    IRewardsController public AAVERewardsController;
+    IRewardsController public immutable AAVERewardsController;
 
     // Aave data provider
     IPoolDataProvider public immutable AAVEPoolDataProvider;
