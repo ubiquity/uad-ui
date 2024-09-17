@@ -19,6 +19,7 @@ force = false
 
 [rpc_endpoints]
 mainnet = "https://rpc.ankr.com/eth"
+sepolia = "https://1rpc.io/sepolia"
 
 [profile.SMT.model_checker]
 contracts = { }
