@@ -1,8 +1,8 @@
 name: Run Semgrep
 
 on:
-  pull_request: {}
-  workflow_dispatch: {}
+  push:
+  workflow_dispatch:
 
 jobs:
   semgrep:
@@ -23,7 +23,7 @@ jobs:
           repository: decurity/semgrep-smart-contracts
           path: rules
           
-      - run: semgrep scan --sarif --output=semgrep.sarif packages/contracts/src/dollar || true
+      - run: semgrep ci --sarif --output=semgrep.sarif --include packages/contracts/src/dollar || true
         env:
            SEMGREP_RULES: rules/solidity/security rules/solidity/performance
 
