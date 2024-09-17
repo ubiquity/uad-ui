@@ -35,32 +35,6 @@ contract AaveAMO is Ownable {
     address[] public aave_borrow_asset_list;
     mapping(address => bool) public aave_borrow_asset_check; // Mapping is also used for faster verification
 
-    /* ========== EVENTS ========== */
-
-    event CollateralDeposited(
-        address indexed collateral_address,
-        uint256 amount
-    );
-    event CollateralWithdrawn(
-        address indexed collateral_address,
-        uint256 amount
-    );
-    event Borrowed(
-        address indexed asset,
-        uint256 amount,
-        uint256 interestRateMode
-    );
-    event Repaid(
-        address indexed asset,
-        uint256 amount,
-        uint256 interestRateMode
-    );
-    event CollateralReturnedToMinter(uint256 amount);
-    event RewardsClaimed();
-    event AMOMinterSet(address indexed new_minter);
-    event ERC20Recovered(address tokenAddress, uint256 tokenAmount);
-    event ExecuteCalled(address indexed to, uint256 value, bytes data);
-
     /* ========== CONSTRUCTOR ========== */
 
     constructor(address _owner_address, address _amo_minter_address) {
@@ -178,6 +152,7 @@ contract AaveAMO is Ownable {
         emit CollateralReturnedToMinter(collat_amount);
     }
 
+    // Sets AMO minter
     function setAMOMinter(address _amo_minter_address) external onlyOwner {
         amo_minter = UbiquityAMOMinter(_amo_minter_address);
 
@@ -205,4 +180,30 @@ contract AaveAMO is Ownable {
         emit ExecuteCalled(_to, _value, _data);
         return (success, result);
     }
+
+    /* ========== EVENTS ========== */
+
+    event CollateralDeposited(
+        address indexed collateral_address,
+        uint256 amount
+    );
+    event CollateralWithdrawn(
+        address indexed collateral_address,
+        uint256 amount
+    );
+    event Borrowed(
+        address indexed asset,
+        uint256 amount,
+        uint256 interestRateMode
+    );
+    event Repaid(
+        address indexed asset,
+        uint256 amount,
+        uint256 interestRateMode
+    );
+    event CollateralReturnedToMinter(uint256 amount);
+    event RewardsClaimed();
+    event AMOMinterSet(address indexed new_minter);
+    event ERC20Recovered(address tokenAddress, uint256 tokenAmount);
+    event ExecuteCalled(address indexed to, uint256 value, bytes data);
 }
