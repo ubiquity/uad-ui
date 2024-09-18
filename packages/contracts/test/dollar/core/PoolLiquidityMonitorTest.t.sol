@@ -147,6 +147,8 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
             address(ubiquityPoolFacet)
         );
 
+        accessControlFacet.grantRole(DEFAULT_ADMIN_ROLE, address(monitor));
+
         // stop being admin
         vm.stopPrank();
 
@@ -220,7 +222,11 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
+        vm.expectRevert("Invalid collateral");
+        ubiquityPoolFacet.collateralInformation(address(collateralToken));
+
         bool monitorPaused = monitor.monitorPaused();
+
         assertTrue(
             monitorPaused,
             "Monitor should be paused after liquidity drop"

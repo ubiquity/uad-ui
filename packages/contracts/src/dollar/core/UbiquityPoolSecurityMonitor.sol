@@ -6,7 +6,7 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {AccessControlFacet} from "../facets/AccessControlFacet.sol";
 import {UbiquityPoolFacet} from "../facets/UbiquityPoolFacet.sol";
-
+import {LibUbiquityPool} from "../libraries/LibUbiquityPool.sol";
 import "../libraries/Constants.sol";
 import "forge-std/console.sol";
 
@@ -92,14 +92,32 @@ contract UbiquityPoolSecurityMonitor is Initializable, UUPSUpgradeable {
                 .div(liquidityVertex);
 
             if (liquidityDiffPercentage >= thresholdPercentage) {
-                // a) Pause the UbiquityDollarToken
-                // b) Pause LibUbiquityPool by disabling collateral
+                // TODO: Pause the UbiquityDollarToken
+
+                // Pause LibUbiquityPool by disabling collateral
+                _pauseLibUbiquityPool();
 
                 monitorPaused = true;
                 emit MonitorPaused(
                     currentCollateralLiquidity,
                     liquidityDiffPercentage
                 );
+            }
+        }
+    }
+
+    function _pauseLibUbiquityPool() internal {
+        address[] memory allCollaterals = ubiquityPoolFacet.allCollaterals();
+
+        for (uint256 i = 0; i < allCollaterals.length; i++) {
+            try
+                ubiquityPoolFacet.collateralInformation(allCollaterals[i])
+            returns (
+                LibUbiquityPool.CollateralInformation memory collateralInfo
+            ) {
+                ubiquityPoolFacet.toggleCollateral(collateralInfo.index);
+            } catch {
+                continue;
             }
         }
     }
