@@ -15,6 +15,8 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract AaveAMOTest is DiamondTestSetup {
     UbiquityAMOMinter amoMinter;
     AaveAMO aaveAMO;
+    address rewardsController =
+        address(0x4DA5c4da71C5a167171cC839487536d86e083483); // Aave Rewards Controller
     address collateralOwner =
         address(0xC959483DBa39aa9E78757139af0e9a2EDEb3f42D); // Aave Sepolia Faucet
     MockERC20 collateralToken =
@@ -52,7 +54,7 @@ contract AaveAMOTest is DiamondTestSetup {
             address(amoMinter),
             address(aave_pool),
             address(1),
-            address(0x4DA5c4da71C5a167171cC839487536d86e083483), // Aave Incentives/Rewards Controller
+            address(rewardsController),
             address(3)
         );
 
@@ -101,7 +103,10 @@ contract AaveAMOTest is DiamondTestSetup {
 
     function testAaveAMOSetup_ShouldSetAAVERewardsController() public {
         // Verify the AAVE rewards controller was set correctly
-        assertEq(address(aaveAMO.AAVERewardsController()), address(2));
+        assertEq(
+            address(aaveAMO.AAVERewardsController()),
+            address(rewardsController)
+        );
     }
 
     function testAaveAMOSetup_ShouldSetAAVEPoolDataProvider() public {
