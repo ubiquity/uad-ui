@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import {DiamondTestSetup} from "../diamond/DiamondTestSetup.sol";
 import {UbiquityAMOMinter} from "../../src/dollar/core/UbiquityAMOMinter.sol";
 import {AaveAMO} from "../../src/dollar/amo/AaveAMO.sol";
-import {MockERC20} from "../../../../src/dollar/mocks/MockERC20.sol";
+import {MockERC20} from "../../src/dollar/mocks/MockERC20.sol";
 import {MockChainLinkFeed} from "../../src/dollar/mocks/MockChainLinkFeed.sol";
 import {IPool} from "@aavev3-core/contracts/interfaces/IPool.sol";
 import {IAToken} from "@aavev3-core/contracts/interfaces/IAToken.sol";
