@@ -24,7 +24,6 @@ contract AaveAMOTest is DiamondTestSetup {
     IAToken aToken = IAToken(0x29598b72eb5CeBd806C5dCD549490FdA35B13cD8); // DAI-AToken-Aave Sepolia
     IVariableDebtToken vToken =
         IVariableDebtToken(0x22675C506A8FC26447aFFfa33640f6af5d4D4cF0); // DAI-VariableDebtToken-Aave Sepolia
-    ERC20 AAVE = ERC20(0x88541670E55cC00bEEFD87eB59EDd1b7C511AC9a); // AAVE Token
 
     // Constants for the test
     address constant newAMOMinterAddress = address(5); // mock new AMO minter address
@@ -53,8 +52,8 @@ contract AaveAMOTest is DiamondTestSetup {
             address(amoMinter),
             address(aave_pool),
             address(1),
-            address(1),
-            address(1)
+            address(2),
+            address(3)
         );
 
         // Enable AaveAMO as a valid AMO
@@ -76,6 +75,120 @@ contract AaveAMOTest is DiamondTestSetup {
         ubiquityPoolFacet.addAmoMinter(address(amoMinter));
 
         vm.stopPrank();
+    }
+
+    /* ========== AAVE AMO SETUP TESTS ========== */
+
+    function testAaveAMOSetup_ShouldSetOwner() public {
+        // Verify the owner was set correctly
+        assertEq(aaveAMO.owner(), owner);
+    }
+
+    function testAaveAMOSetup_ShouldSetAMOMinter() public {
+        // Verify the AMO minter was set correctly
+        assertEq(address(aaveAMO.amo_minter()), address(amoMinter));
+    }
+
+    function testAaveAMOSetup_ShouldSetAavePool() public {
+        // Verify the Aave pool was set correctly
+        assertEq(address(aaveAMO.aave_pool()), address(aave_pool));
+    }
+
+    function testAaveAMOSetup_ShouldSetAAVE() public {
+        // Verify the AAVE token was set correctly
+        assertEq(address(aaveAMO.AAVE()), address(1));
+    }
+
+    function testAaveAMOSetup_ShouldSetAAVERewardsController() public {
+        // Verify the AAVE rewards controller was set correctly
+        assertEq(address(aaveAMO.AAVERewardsController()), address(2));
+    }
+
+    function testAaveAMOSetup_ShouldSetAAVEPoolDataProvider() public {
+        // Verify the AAVE pool data provider was set correctly
+        assertEq(address(aaveAMO.AAVEPoolDataProvider()), address(3));
+    }
+
+    function testConstructor_ShouldRevertWhenOwnerIsZeroAddress() public {
+        // Test with zero address for owner
+        vm.expectRevert("Owner address cannot be zero");
+        new AaveAMO(
+            address(0), // Invalid owner address
+            address(amoMinter),
+            address(aave_pool),
+            address(1),
+            address(2),
+            address(3)
+        );
+    }
+
+    function testConstructor_ShouldRevertWhenAMOMinterIsZeroAddress() public {
+        // Test with zero address for AMO minter
+        vm.expectRevert("AMO minter address cannot be zero");
+        new AaveAMO(
+            owner,
+            address(0), // Invalid AMO minter address
+            address(aave_pool),
+            address(1),
+            address(2),
+            address(3)
+        );
+    }
+
+    function testConstructor_ShouldRevertWhenAavePoolIsZeroAddress() public {
+        // Test with zero address for Aave pool
+        vm.expectRevert("Aave pool address cannot be zero");
+        new AaveAMO(
+            owner,
+            address(amoMinter),
+            address(0), // Invalid Aave pool address
+            address(1),
+            address(2),
+            address(3)
+        );
+    }
+
+    function testConstructor_ShouldRevertWhenAAVEIsZeroAddress() public {
+        // Test with zero address for AAVE
+        vm.expectRevert("AAVE address cannot be zero");
+        new AaveAMO(
+            owner,
+            address(amoMinter),
+            address(aave_pool),
+            address(0), // Invalid AAVE address
+            address(2),
+            address(3)
+        );
+    }
+
+    function testConstructor_ShouldRevertWhenAAVERewardsControllerIsZeroAddress()
+        public
+    {
+        // Test with zero address for AAVE rewards controller
+        vm.expectRevert("AAVE rewards controller address cannot be zero");
+        new AaveAMO(
+            owner,
+            address(amoMinter),
+            address(aave_pool),
+            address(1),
+            address(0), // Invalid AAVE rewards controller address
+            address(3)
+        );
+    }
+
+    function testConstructor_ShouldRevertWhenAAVEPoolDataProviderIsZeroAddress()
+        public
+    {
+        // Test with zero address for AAVE pool data provider
+        vm.expectRevert("AAVE pool data provider address cannot be zero");
+        new AaveAMO(
+            owner,
+            address(amoMinter),
+            address(aave_pool),
+            address(1),
+            address(2),
+            address(0) // Invalid AAVE pool data provider address
+        );
     }
 
     /* ========== AAVE AMO COLLATERAL TESTS ========== */
