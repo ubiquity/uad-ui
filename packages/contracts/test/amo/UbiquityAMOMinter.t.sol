@@ -187,7 +187,7 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
 
         // Ensure exceeding the borrow cap reverts
         vm.prank(owner);
-        vm.expectRevert("Borrow cap");
+        vm.expectRevert("Borrow cap exceeded");
         amoMinter.giveCollatToAMO(address(aaveAMO), collatAmount);
     }
 
