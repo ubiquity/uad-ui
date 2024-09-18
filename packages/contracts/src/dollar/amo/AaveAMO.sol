@@ -9,32 +9,46 @@ import {IPool} from "@aavev3-core/contracts/interfaces/IPool.sol";
 import {IPoolDataProvider} from "@aavev3-core/contracts/interfaces/IPoolDataProvider.sol";
 import {IRewardsController} from "@aavev3-periphery/contracts/rewards/interfaces/IRewardsController.sol";
 
+/**
+ * @title AaveAMO
+ * @notice AMO to interact with Aave V3 and manage rewards and borrowing mechanisms.
+ * @notice Can receive collateral from Ubiquity AMO minter and interact with Aave's V3 pool.
+ */
 contract AaveAMO is Ownable {
     using SafeERC20 for ERC20;
 
-    /* ========== STATE VARIABLES ========== */
-
-    // Constants
+    /// @notice Ubiquity AMO minter instance
     UbiquityAMOMinter public amo_minter;
 
-    // Pools and vaults
+    /// @notice Aave V3 pool instance
     IPool public immutable aave_pool;
 
-    // Reward Tokens
+    /// @notice AAVE token address
     ERC20 public immutable AAVE;
 
-    // Rewards Controller
+    /// @notice AAVE rewards controller
     IRewardsController public immutable AAVERewardsController;
 
-    // Aave data provider
+    /// @notice AAVE data provider
     IPoolDataProvider public immutable AAVEPoolDataProvider;
 
-    // Borrowed assets
+    /// @notice List of borrowed assets from Aave
     address[] public aave_borrow_asset_list;
-    mapping(address => bool) public aave_borrow_asset_check; // Mapping is also used for faster verification
+
+    /// @notice Mapping for tracking borrowed assets
+    mapping(address => bool) public aave_borrow_asset_check;
 
     /* ========== CONSTRUCTOR ========== */
 
+    /**
+     * @notice Initializes the contract with necessary parameters
+     * @param _owner_address Address of the contract owner
+     * @param _amo_minter_address Address of the Ubiquity AMO minter
+     * @param _aave_pool Address of the Aave pool
+     * @param _aave Address of the AAVE token
+     * @param _aave_rewards_controller Address of the AAVE rewards controller
+     * @param _aave_pool_data_provider Address of the AAVE data provider
+     */
     constructor(
         address _owner_address,
         address _amo_minter_address,
@@ -59,37 +73,42 @@ contract AaveAMO is Ownable {
             "AAVE pool data provider address cannot be zero"
         );
 
-        // Set owner
+        // Set contract owner
         transferOwnership(_owner_address);
 
-        // Set AMO minter
+        // Set the AMO minter
         amo_minter = UbiquityAMOMinter(_amo_minter_address);
 
-        // Set Aave pool
+        // Set the Aave pool
         aave_pool = IPool(_aave_pool);
 
-        // Set AAVE
+        // Set the AAVE token
         AAVE = ERC20(_aave);
 
-        // Set AAVE rewards controller
+        // Set the AAVE rewards controller
         AAVERewardsController = IRewardsController(_aave_rewards_controller);
 
-        // Set AAVE pool data provider
+        // Set the AAVE pool data provider
         AAVEPoolDataProvider = IPoolDataProvider(_aave_pool_data_provider);
     }
 
     /* ========== MODIFIERS ========== */
 
+    /**
+     * @notice Ensures the caller is the AMO minter
+     */
     modifier onlyByMinter() {
         require(msg.sender == address(amo_minter), "Not minter");
         _;
     }
 
-    /* ========== AAVE V3 + Rewards ========== */
+    /* ========== AAVE V3 + REWARDS ========== */
 
-    /// @notice Function to deposit other assets as collateral to Aave pool
-    /// @param collateral_address collateral ERC20 address
-    /// @param amount Amount of asset to be deposited
+    /**
+     * @notice Deposits collateral to Aave pool
+     * @param collateral_address Address of the collateral ERC20
+     * @param amount Amount of collateral to deposit
+     */
     function aaveDepositCollateral(
         address collateral_address,
         uint256 amount
@@ -101,9 +120,11 @@ contract AaveAMO is Ownable {
         emit CollateralDeposited(collateral_address, amount);
     }
 
-    /// @notice Function to withdraw other assets as collateral from Aave pool
-    /// @param collateral_address collateral ERC20 address
-    /// @param aToken_amount Amount of asset to be withdrawn
+    /**
+     * @notice Withdraws collateral from Aave pool
+     * @param collateral_address Address of the collateral ERC20
+     * @param aToken_amount Amount of collateral to withdraw
+     */
     function aaveWithdrawCollateral(
         address collateral_address,
         uint256 aToken_amount
@@ -113,10 +134,12 @@ contract AaveAMO is Ownable {
         emit CollateralWithdrawn(collateral_address, aToken_amount);
     }
 
-    /// @notice Function to borrow other assets from Aave pool
-    /// @param asset Borrowing asset ERC20 address
-    /// @param borrow_amount Amount of asset to be borrowed
-    /// @param interestRateMode The interest rate mode: 1 for Stable, 2 for Variable
+    /**
+     * @notice Borrows an asset from Aave pool
+     * @param asset Address of the asset to borrow
+     * @param borrow_amount Amount of asset to borrow
+     * @param interestRateMode Interest rate mode: 1 for Stable, 2 for Variable
+     */
     function aaveBorrow(
         address asset,
         uint256 borrow_amount,
@@ -135,10 +158,12 @@ contract AaveAMO is Ownable {
         emit Borrowed(asset, borrow_amount, interestRateMode);
     }
 
-    /// @notice Function to repay other assets to Aave pool
-    /// @param asset Borrowing asset ERC20 address
-    /// @param repay_amount Amount of asset to be repaid
-    /// @param interestRateMode The interest rate mode: 1 for Stable, 2 for Variable
+    /**
+     * @notice Repays a borrowed asset to Aave pool
+     * @param asset Address of the asset to repay
+     * @param repay_amount Amount of asset to repay
+     * @param interestRateMode Interest rate mode: 1 for Stable, 2 for Variable
+     */
     function aaveRepay(
         address asset,
         uint256 repay_amount,
@@ -151,7 +176,9 @@ contract AaveAMO is Ownable {
         emit Repaid(asset, repay_amount, interestRateMode);
     }
 
-    /// @notice Function to claim all rewards
+    /**
+     * @notice Claims all rewards from Aave
+     */
     function claimAllRewards() external {
         address[] memory allTokens = aave_pool.getReservesList();
         AAVERewardsController.claimAllRewards(allTokens, address(this));
@@ -161,8 +188,10 @@ contract AaveAMO is Ownable {
 
     /* ========== RESTRICTED GOVERNANCE FUNCTIONS ========== */
 
-    /// @notice Function to return collateral to the minter
-    /// @param collat_amount Amount of collateral to return to the minter
+    /**
+     * @notice Returns collateral back to the AMO minter
+     * @param collat_amount Amount of collateral to return
+     */
     function returnCollateralToMinter(uint256 collat_amount) public onlyOwner {
         ERC20 collateral_token = amo_minter.collateral_token();
 
@@ -170,23 +199,28 @@ contract AaveAMO is Ownable {
             collat_amount = collateral_token.balanceOf(address(this));
         }
 
-        // Approve collateral to UbiquityAMOMinter
+        // Approve and return collateral
         collateral_token.approve(address(amo_minter), collat_amount);
-
-        // Call receiveCollatFromAMO from the UbiquityAMOMinter
         amo_minter.receiveCollatFromAMO(collat_amount);
 
         emit CollateralReturnedToMinter(collat_amount);
     }
 
-    // Sets AMO minter
+    /**
+     * @notice Sets the AMO minter address
+     * @param _amo_minter_address New address of the AMO minter
+     */
     function setAMOMinter(address _amo_minter_address) external onlyOwner {
         amo_minter = UbiquityAMOMinter(_amo_minter_address);
 
         emit AMOMinterSet(_amo_minter_address);
     }
 
-    // Emergency ERC20 recovery function
+    /**
+     * @notice Recovers any ERC20 tokens held by the contract
+     * @param tokenAddress Address of the token to recover
+     * @param tokenAmount Amount of tokens to recover
+     */
     function recoverERC20(
         address tokenAddress,
         uint256 tokenAmount
@@ -196,7 +230,13 @@ contract AaveAMO is Ownable {
         emit ERC20Recovered(tokenAddress, tokenAmount);
     }
 
-    // Emergency generic proxy - allows owner to execute arbitrary calls on this contract
+    /**
+     * @notice Executes arbitrary calls from this contract
+     * @param _to Address to call
+     * @param _value Value to send
+     * @param _data Data to execute
+     * @return success, result Returns whether the call succeeded and the returned data
+     */
     function execute(
         address _to,
         uint256 _value,
