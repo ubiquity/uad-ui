@@ -167,11 +167,12 @@ contract AaveAMO is Ownable {
     }
 
     /**
-     * @notice Claims all rewards from Aave
+     * @notice Claims all rewards available from the list of assets provided, will fail if balance on asset is zero
+     * @param assets Array of aTokens/sTokens/vTokens addresses to claim rewards from
      */
-    function claimAllRewards() external {
-        address[] memory allTokens = aave_pool.getReservesList();
-        AAVERewardsController.claimAllRewards(allTokens, address(this));
+    function claimAllRewards(address[] memory assets) external {
+        // Claim all rewards for the collected tokens
+        AAVERewardsController.claimAllRewards(assets, address(this));
 
         emit RewardsClaimed();
     }

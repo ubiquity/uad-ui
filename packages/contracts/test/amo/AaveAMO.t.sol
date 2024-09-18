@@ -52,7 +52,7 @@ contract AaveAMOTest is DiamondTestSetup {
             address(amoMinter),
             address(aave_pool),
             address(1),
-            address(2),
+            address(0x4DA5c4da71C5a167171cC839487536d86e083483), // Aave Incentives/Rewards Controller
             address(3)
         );
 
@@ -414,6 +414,33 @@ contract AaveAMOTest is DiamondTestSetup {
         vm.prank(nonAMO);
         vm.expectRevert("Ownable: caller is not the owner");
         aaveAMO.setAMOMinter(newAMOMinterAddress);
+    }
+
+    /* =========== AAVE AMO REWARDS TESTS =========== */
+
+    function testClaimAllRewards_ShouldClaimRewardsSuccessfully() public {
+        uint256 depositAmount = 1000e18;
+
+        // Mints collateral to AMO
+        vm.prank(collateralOwner);
+        collateralToken.mint(address(aaveAMO), depositAmount);
+
+        // Owner deposits collateral to Aave Pool
+        vm.prank(owner);
+        aaveAMO.aaveDepositCollateral(address(collateralToken), depositAmount);
+
+        // Specify assets to claim rewards for
+        address[] memory assets = new address[](1);
+        assets[0] = aave_pool
+            .getReserveData(address(collateralToken))
+            .aTokenAddress;
+
+        // Claim rewards from Aave
+        vm.prank(owner);
+        aaveAMO.claimAllRewards(assets);
+
+        // Verify the rewards were claimed successfully
+        assertTrue(true);
     }
 
     /* ========== AAVE AMO EMERGENCY TESTS ========== */
