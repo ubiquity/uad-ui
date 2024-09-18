@@ -67,6 +67,59 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
         vm.stopPrank();
     }
 
+    function testConstructor_ShouldInitializeCorrectly() public {
+        // Deploy a new instance of the UbiquityAMOMinter contract
+        UbiquityAMOMinter newAmoMinter = new UbiquityAMOMinter(
+            owner,
+            address(collateralToken), // Collateral token address
+            0, // Collateral index
+            address(ubiquityPoolFacet) // Pool address
+        );
+
+        // Verify the owner is set correctly
+        assertEq(newAmoMinter.owner(), owner);
+
+        // Verify the collateral token is set correctly
+        assertEq(
+            address(newAmoMinter.collateral_token()),
+            address(collateralToken)
+        );
+
+        // Verify the collateral index is set correctly
+        assertEq(newAmoMinter.collateralIndex(), 0);
+
+        // Verify the pool address is set correctly
+        assertEq(address(newAmoMinter.pool()), address(ubiquityPoolFacet));
+
+        // Verify the missing decimals calculation
+        assertEq(
+            newAmoMinter.missing_decimals(),
+            uint256(18) - collateralToken.decimals()
+        );
+    }
+
+    function testConstructor_ShouldRevertIfOwnerIsZero() public {
+        // Ensure the constructor reverts if the owner address is zero
+        vm.expectRevert("Owner address cannot be zero");
+        new UbiquityAMOMinter(
+            address(0),
+            address(collateralToken), // Collateral token address
+            0, // Collateral index
+            address(ubiquityPoolFacet) // Pool address
+        );
+    }
+
+    function testConstructor_ShouldRevertIfPoolAddressIsZero() public {
+        // Ensure the constructor reverts if the pool address is zero
+        vm.expectRevert("Pool address cannot be zero");
+        new UbiquityAMOMinter(
+            owner,
+            address(collateralToken), // Collateral token address
+            0, // Collateral index
+            address(0) // Pool address
+        );
+    }
+
     /* ========== Tests for AMO management ========== */
 
     function testEnableAMO_ShouldWorkWhenCalledByOwner() public {
