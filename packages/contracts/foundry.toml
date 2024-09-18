@@ -43,3 +43,6 @@ src = 'src/dollar'
 [profile.intense.fuzz]
 runs = 100000
 max_test_rejects = 900000
+
+[profile.intense.invariant]
+runs = 50000 # ~1 hour

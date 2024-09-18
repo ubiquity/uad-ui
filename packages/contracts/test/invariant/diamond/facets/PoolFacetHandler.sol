@@ -73,14 +73,18 @@ contract PoolFacetHandler is Test {
     }
 
     /**
-     * @notice Manipulates the Ubiquity Dollar price to a value above a set threshold.
+     * @notice Simulates setting the Ubiquity Dollar price to a value of the minting threshold.
+     * @dev This function updates the mocked Curve pool parameters to simulate a Ubiquity Dollar price of $1.01.
+     * The threshold of $1.01 is significant because it represents the upper bound at which new Ubiquity Dollars can be minted.
      */
     function setDollarPriceAboveThreshold() public {
         curveDollarPlainPool.updateMockParams(1.01e18);
     }
 
     /**
-     * @notice Manipulates the Ubiquity Dollar price to a value below a set threshold.
+     * @notice Simulates setting the Ubiquity Dollar price to a value of the redemption threshold.
+     * @dev This function updates the mocked Curve pool parameters to simulate a Ubiquity Dollar price of $0.99.
+     * The threshold of $0.99 is significant because it represents the lower bound at which Ubiquity Dollars can be redeemed.
      */
     function setDollarPriceBelowThreshold() public {
         curveDollarPlainPool.updateMockParams(0.99e18);
@@ -139,9 +143,9 @@ contract PoolFacetHandler is Test {
     }
 
     /**
-     * @notice Manipulates the stable USD price and updates the corresponding collateral ratio.
+     * @notice Manipulates the stable USD price.
      * @dev This function adjusts the price of the stable USD token using a mock ChainLink price feed.
-     * It assumes the new price is within the specified range and updates the collateral ratio in the UbiquityPoolFacet.
+     * It assumes the new price is within the specified range.
      * @param _newPrice The new price of the stable USD token, scaled by 1e8 (e.g., a price of $1 is represented as 1e8).
      */
     function setStableUsdPrice(uint256 _newPrice) public {
@@ -158,9 +162,9 @@ contract PoolFacetHandler is Test {
     }
 
     /**
-     * @notice Manipulates the collateral price and updates the corresponding collateral ratio.
+     * @notice Manipulates the collateral price.
      * @dev This function adjusts the price of the collateral token using a mock ChainLink price feed.
-     * It assumes the new price is within the allowed range and updates the collateral ratio in the UbiquityPoolFacet.
+     * It assumes the new price is within the allowed range.
      * @param _newPrice The new price of the collateral, scaled by 1e8 (e.g., a price of $1 is represented as 1e8).
      */
     function setCollateralPrice(int256 _newPrice) public {

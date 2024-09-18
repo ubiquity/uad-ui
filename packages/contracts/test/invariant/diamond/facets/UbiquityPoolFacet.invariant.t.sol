@@ -207,7 +207,7 @@ contract UbiquityPoolFacetInvariantTest is DiamondTestSetup {
     /**
      * @notice Helper function to get the USD value of total Dollar supply and the collateral USD balance.
      * @dev This function returns the current total supply of Ubiquity Dollars in USD and the USD value of the collateral.
-     * @return totalDollarSupplyInUsd The total supply of Ubiquity Dollars in USD (6 decimals).
+     * @return totalDollarSupplyInUsd The total supply of Ubiquity Dollars in USD (18 decimals).
      * @return collateralUsdBalance The total USD value of collateral backing the Ubiquity Dollars (18 decimals).
      */
     function getDollarSupplyAndCollateralBalance()
