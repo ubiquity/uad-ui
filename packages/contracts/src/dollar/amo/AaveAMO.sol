@@ -92,16 +92,6 @@ contract AaveAMO is Ownable {
         AAVEPoolDataProvider = IPoolDataProvider(_aave_pool_data_provider);
     }
 
-    /* ========== MODIFIERS ========== */
-
-    /**
-     * @notice Ensures the caller is the AMO minter
-     */
-    modifier onlyByMinter() {
-        require(msg.sender == address(amo_minter), "Not minter");
-        _;
-    }
-
     /* ========== AAVE V3 + REWARDS ========== */
 
     /**
