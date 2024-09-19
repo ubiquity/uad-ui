@@ -3,20 +3,20 @@ pragma solidity 0.8.19;
 
 import "forge-std/Test.sol";
 import {DiamondTestSetup} from "../diamond/DiamondTestSetup.sol";
-import {UbiquityAMOMinter} from "../../src/dollar/core/UbiquityAMOMinter.sol";
-import {AaveAMO} from "../../src/dollar/amo/AaveAMO.sol";
+import {UbiquityAmoMinter} from "../../src/dollar/core/UbiquityAmoMinter.sol";
+import {AaveAmo} from "../../src/dollar/amo/AaveAmo.sol";
 import {MockERC20} from "../../src/dollar/mocks/MockERC20.sol";
 import {IUbiquityPool} from "../../src/dollar/interfaces/IUbiquityPool.sol";
 import {MockChainLinkFeed} from "../../src/dollar/mocks/MockChainLinkFeed.sol";
 
-contract UbiquityAMOMinterTest is DiamondTestSetup {
-    UbiquityAMOMinter amoMinter;
-    AaveAMO aaveAMO;
+contract UbiquityAmoMinterTest is DiamondTestSetup {
+    UbiquityAmoMinter amoMinter;
+    AaveAmo aaveAmo;
     MockERC20 collateralToken;
     MockChainLinkFeed collateralTokenPriceFeed;
 
     address newPoolAddress = address(4); // mock new pool address
-    address nonAMO = address(9999);
+    address nonAmo = address(9999);
 
     function setUp() public override {
         super.setUp();
@@ -25,16 +25,16 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
         collateralToken = new MockERC20("Mock Collateral", "MCT", 18);
         collateralTokenPriceFeed = new MockChainLinkFeed();
 
-        // Deploy UbiquityAMOMinter contract
-        amoMinter = new UbiquityAMOMinter(
+        // Deploy UbiquityAmoMinter contract
+        amoMinter = new UbiquityAmoMinter(
             owner,
             address(collateralToken), // Collateral token address
             0, // Collateral index
             address(ubiquityPoolFacet) // Pool address
         );
 
-        // Deploy AaveAMO contract
-        aaveAMO = new AaveAMO(
+        // Deploy AaveAmo contract
+        aaveAmo = new AaveAmo(
             owner,
             address(amoMinter),
             address(1),
@@ -43,9 +43,9 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
             address(4)
         );
 
-        // Enable AaveAMO as a valid AMO
+        // Enable AaveAmo as a valid Amo
         vm.prank(owner);
-        amoMinter.enableAMO(address(aaveAMO));
+        amoMinter.enableAmo(address(aaveAmo));
 
         vm.startPrank(admin); // Prank as admin for pool setup
 
@@ -57,7 +57,7 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
             poolCeiling
         );
 
-        // Enable collateral and register AMO Minter
+        // Enable collateral and register Amo Minter
         ubiquityPoolFacet.toggleCollateral(0);
         ubiquityPoolFacet.addAmoMinter(address(amoMinter));
 
@@ -68,8 +68,8 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
     }
 
     function testConstructor_ShouldInitializeCorrectly() public {
-        // Deploy a new instance of the UbiquityAMOMinter contract
-        UbiquityAMOMinter newAmoMinter = new UbiquityAMOMinter(
+        // Deploy a new instance of the UbiquityAmoMinter contract
+        UbiquityAmoMinter newAmoMinter = new UbiquityAmoMinter(
             owner,
             address(collateralToken), // Collateral token address
             0, // Collateral index
@@ -81,7 +81,7 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
 
         // Verify the collateral token is set correctly
         assertEq(
-            address(newAmoMinter.collateral_token()),
+            address(newAmoMinter.collateralToken()),
             address(collateralToken)
         );
 
@@ -93,7 +93,7 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
 
         // Verify the missing decimals calculation
         assertEq(
-            newAmoMinter.missing_decimals(),
+            newAmoMinter.missingDecimals(),
             uint256(18) - collateralToken.decimals()
         );
     }
@@ -101,7 +101,7 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
     function testConstructor_ShouldRevertIfOwnerIsZero() public {
         // Ensure the constructor reverts if the owner address is zero
         vm.expectRevert("Owner address cannot be zero");
-        new UbiquityAMOMinter(
+        new UbiquityAmoMinter(
             address(0),
             address(collateralToken), // Collateral token address
             0, // Collateral index
@@ -112,7 +112,7 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
     function testConstructor_ShouldRevertIfPoolAddressIsZero() public {
         // Ensure the constructor reverts if the pool address is zero
         vm.expectRevert("Pool address cannot be zero");
-        new UbiquityAMOMinter(
+        new UbiquityAmoMinter(
             owner,
             address(collateralToken), // Collateral token address
             0, // Collateral index
@@ -120,101 +120,104 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
         );
     }
 
-    /* ========== Tests for AMO management ========== */
+    /* ========== Tests for Amo management ========== */
 
-    function testEnableAMO_ShouldWorkWhenCalledByOwner() public {
-        // Test enabling a new AMO
-        address newAMO = address(10);
+    function testEnableAmo_ShouldWorkWhenCalledByOwner() public {
+        // Test enabling a new Amo
+        address newAmo = address(10);
         vm.prank(owner);
-        amoMinter.enableAMO(newAMO);
+        amoMinter.enableAmo(newAmo);
 
-        // Check if the new AMO is enabled
-        assertEq(amoMinter.AMOs(newAMO), true);
+        // Check if the new Amo is enabled
+        assertEq(amoMinter.Amos(newAmo), true);
     }
 
-    function testDisableAMO_ShouldWorkWhenCalledByOwner() public {
-        // Test disabling the AaveAMO
+    function testDisableAmo_ShouldWorkWhenCalledByOwner() public {
+        // Test disabling the AaveAmo
         vm.prank(owner);
-        amoMinter.disableAMO(address(aaveAMO));
+        amoMinter.disableAmo(address(aaveAmo));
 
-        // Check if the AMO is disabled
-        assertEq(amoMinter.AMOs(address(aaveAMO)), false);
+        // Check if the Amo is disabled
+        assertEq(amoMinter.Amos(address(aaveAmo)), false);
     }
 
-    function testEnableAMO_ShouldRevertWhenCalledByNonOwner() public {
-        // Ensure only the owner can enable AMOs
-        address newAMO = address(10);
-        vm.prank(nonAMO);
+    function testEnableAmo_ShouldRevertWhenCalledByNonOwner() public {
+        // Ensure only the owner can enable Amos
+        address newAmo = address(10);
+        vm.prank(nonAmo);
         vm.expectRevert("Ownable: caller is not the owner");
-        amoMinter.enableAMO(newAMO);
+        amoMinter.enableAmo(newAmo);
     }
 
-    function testDisableAMO_ShouldRevertWhenCalledByNonOwner() public {
-        // Ensure only the owner can disable AMOs
-        vm.prank(nonAMO);
+    function testDisableAmo_ShouldRevertWhenCalledByNonOwner() public {
+        // Ensure only the owner can disable Amos
+        vm.prank(nonAmo);
         vm.expectRevert("Ownable: caller is not the owner");
-        amoMinter.disableAMO(address(aaveAMO));
+        amoMinter.disableAmo(address(aaveAmo));
     }
 
-    /* ========== Tests for giveCollatToAMO ========== */
+    /* ========== Tests for giveCollateralToAmo ========== */
 
-    function testGiveCollatToAMO_ShouldWorkWhenCalledByOwner() public {
+    function testGiveCollatToAmo_ShouldWorkWhenCalledByOwner() public {
         uint256 collatAmount = 1000e18;
 
-        // Owner gives collateral to the AaveAMO
+        // Owner gives collateral to the AaveAmo
         vm.prank(owner);
-        amoMinter.giveCollatToAMO(address(aaveAMO), collatAmount);
+        amoMinter.giveCollateralToAmo(address(aaveAmo), collatAmount);
 
         // Verify the balances
         assertEq(
-            amoMinter.collat_borrowed_balances(address(aaveAMO)),
+            amoMinter.collateralBorrowedBalances(address(aaveAmo)),
             int256(collatAmount)
         );
-        assertEq(amoMinter.collat_borrowed_sum(), int256(collatAmount));
+        assertEq(
+            amoMinter.collateralTotalBorrowedBalance(),
+            int256(collatAmount)
+        );
     }
 
-    function testGiveCollatToAMO_ShouldRevertWhenNotValidAMO() public {
+    function testGiveCollatToAmo_ShouldRevertWhenNotValidAmo() public {
         uint256 collatAmount = 1000e18;
 
-        // Ensure giving collateral to a non-AMO address reverts
+        // Ensure giving collateral to a non-Amo address reverts
         vm.prank(owner);
-        vm.expectRevert("Invalid AMO");
-        amoMinter.giveCollatToAMO(nonAMO, collatAmount);
+        vm.expectRevert("Invalid Amo");
+        amoMinter.giveCollateralToAmo(nonAmo, collatAmount);
     }
 
-    function testGiveCollatToAMO_ShouldRevertWhenExceedingBorrowCap() public {
+    function testGiveCollatToAmo_ShouldRevertWhenExceedingBorrowCap() public {
         uint256 collatAmount = 200000e18; // Exceeds the default borrow cap of 100_000
 
         // Ensure exceeding the borrow cap reverts
         vm.prank(owner);
         vm.expectRevert("Borrow cap exceeded");
-        amoMinter.giveCollatToAMO(address(aaveAMO), collatAmount);
+        amoMinter.giveCollateralToAmo(address(aaveAmo), collatAmount);
     }
 
-    /* ========== Tests for receiveCollatFromAMO ========== */
+    /* ========== Tests for receiveCollateralFromAmo ========== */
 
-    // This function is actually intended to be called by the AMO, but we can test it by calling it directly
-    function testReceiveCollatFromAMO_ShouldWorkWhenCalledByValidAMO() public {
+    // This function is actually intended to be called by the Amo, but we can test it by calling it directly
+    function testReceiveCollatFromAmo_ShouldWorkWhenCalledByValidAmo() public {
         uint256 collatAmount = 1000e18;
 
         uint256 poolBalance = collateralToken.balanceOf(
             address(ubiquityPoolFacet)
         );
 
-        // First, give collateral to the AMO
+        // First, give collateral to the Amo
         vm.prank(owner);
-        amoMinter.giveCollatToAMO(address(aaveAMO), collatAmount);
+        amoMinter.giveCollateralToAmo(address(aaveAmo), collatAmount);
 
-        // AMO returns collateral
-        vm.startPrank(address(aaveAMO));
+        // Amo returns collateral
+        vm.startPrank(address(aaveAmo));
         collateralToken.approve(address(amoMinter), collatAmount);
-        amoMinter.receiveCollatFromAMO(collatAmount);
+        amoMinter.receiveCollateralFromAmo(collatAmount);
         vm.stopPrank();
 
         // Verify the balances
-        assertEq(amoMinter.collat_borrowed_balances(address(aaveAMO)), 0);
-        assertEq(amoMinter.collat_borrowed_sum(), 0);
-        assertEq(collateralToken.balanceOf(address(aaveAMO)), 0);
+        assertEq(amoMinter.collateralBorrowedBalances(address(aaveAmo)), 0);
+        assertEq(amoMinter.collateralTotalBorrowedBalance(), 0);
+        assertEq(collateralToken.balanceOf(address(aaveAmo)), 0);
         assertEq(collateralToken.balanceOf(address(amoMinter)), 0);
         assertEq(
             poolBalance,
@@ -222,26 +225,26 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
         );
     }
 
-    function testReceiveCollatFromAMO_ShouldRevertWhenNotValidAMO() public {
+    function testReceiveCollatFromAmo_ShouldRevertWhenNotValidAmo() public {
         uint256 collatAmount = 1000e18;
 
-        // Ensure non-AMO cannot return collateral
-        vm.prank(nonAMO);
-        vm.expectRevert("Invalid AMO");
-        amoMinter.receiveCollatFromAMO(collatAmount);
+        // Ensure non-Amo cannot return collateral
+        vm.prank(nonAmo);
+        vm.expectRevert("Invalid Amo");
+        amoMinter.receiveCollateralFromAmo(collatAmount);
     }
 
-    /* ========== Tests for setCollatBorrowCap ========== */
+    /* ========== Tests for setCollateralBorrowCap ========== */
 
     function testSetCollatBorrowCap_ShouldWorkWhenCalledByOwner() public {
         uint256 newCap = 5000000e6; // new cap
 
         // Owner sets new collateral borrow cap
         vm.prank(owner);
-        amoMinter.setCollatBorrowCap(newCap);
+        amoMinter.setCollateralBorrowCap(newCap);
 
         // Verify the collateral borrow cap was updated
-        assertEq(amoMinter.collat_borrow_cap(), int256(newCap));
+        assertEq(amoMinter.collateralBorrowCap(), int256(newCap));
     }
 
     function testSetCollatBorrowCap_ShouldRevertWhenCalledByNonOwner() public {
@@ -250,7 +253,7 @@ contract UbiquityAMOMinterTest is DiamondTestSetup {
         // Ensure non-owner cannot set the cap
         vm.prank(address(1234));
         vm.expectRevert("Ownable: caller is not the owner");
-        amoMinter.setCollatBorrowCap(newCap);
+        amoMinter.setCollateralBorrowCap(newCap);
     }
 
     /* ========== Tests for setPool ========== */
