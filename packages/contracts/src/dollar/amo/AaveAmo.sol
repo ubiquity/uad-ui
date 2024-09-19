@@ -11,13 +11,13 @@ import {IRewardsController} from "@aavev3-periphery/contracts/rewards/interfaces
 
 /**
  * @title AaveAmo
- * @notice Amo to interact with Aave V3 and manage rewards and borrowing mechanisms.
- * @notice Can receive collateral from Ubiquity Amo minter and interact with Aave's V3 pool.
+ * @notice AMO to interact with Aave V3 and manage rewards and borrowing mechanisms.
+ * @notice Can receive collateral from UbiquityAmoMinter and interact with Aave's V3 pool.
  */
 contract AaveAmo is Ownable {
     using SafeERC20 for ERC20;
 
-    /// @notice Ubiquity Amo minter instance
+    /// @notice UbiquityAmoMinter instance
     UbiquityAmoMinter public amoMinter;
 
     /// @notice Aave V3 pool instance
@@ -180,7 +180,7 @@ contract AaveAmo is Ownable {
     /* ========== RESTRICTED GOVERNANCE FUNCTIONS ========== */
 
     /**
-     * @notice Returns collateral back to the Amo minter
+     * @notice Returns collateral back to the AMO minter
      * @param collateralAmount Amount of collateral to return
      */
     function returnCollateralToMinter(
@@ -200,8 +200,8 @@ contract AaveAmo is Ownable {
     }
 
     /**
-     * @notice Sets the Amo minter address
-     * @param _amoMinterAddress New address of the Amo minter
+     * @notice Sets the AMO minter address
+     * @param _amoMinterAddress New address of the AMO minter
      */
     function setAmoMinter(address _amoMinterAddress) external onlyOwner {
         amoMinter = UbiquityAmoMinter(_amoMinterAddress);

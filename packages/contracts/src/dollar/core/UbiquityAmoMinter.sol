@@ -8,14 +8,14 @@ import {IUbiquityPool} from "../interfaces/IUbiquityPool.sol";
 
 /**
  * @title UbiquityAmoMinter
- * @notice Contract responsible for managing collateral borrowing from Ubiquity's Pool for Amo.
- * @notice Allows owner to move Dollar collateral to Amos, enabling yield generation.
+ * @notice Contract responsible for managing collateral borrowing from Ubiquity's Pool to AMOs.
+ * @notice Allows owner to move Dollar collateral to AMOs, enabling yield generation.
  * @notice It keeps track of borrowed collateral balances per Amo and the total borrowed sum.
  */
 contract UbiquityAmoMinter is Ownable {
     using SafeERC20 for ERC20;
 
-    /// @notice Collateral token used by the Amo minter
+    /// @notice Collateral token used by the AMO minter
     ERC20 public immutable collateralToken;
 
     /// @notice Ubiquity pool interface
@@ -27,13 +27,13 @@ contract UbiquityAmoMinter is Ownable {
     uint256 public immutable missingDecimals;
     int256 public collateralBorrowCap = int256(100_000e18);
 
-    /// @notice Mapping for tracking borrowed collateral balances per Amo
+    /// @notice Mapping for tracking borrowed collateral balances per AMO
     mapping(address => int256) public collateralBorrowedBalances;
 
     /// @notice Sum of all collateral borrowed across Amos
     int256 public collateralTotalBorrowedBalance = 0;
 
-    /// @notice Mapping to track active Amos
+    /// @notice Mapping to track active AMOs
     mapping(address => bool) public Amos;
 
     /* ========== CONSTRUCTOR ========== */
@@ -73,27 +73,27 @@ contract UbiquityAmoMinter is Ownable {
     /* ========== MODIFIERS ========== */
 
     /**
-     * @notice Ensures the caller is a valid Amo
-     * @param amoAddress Address of the Amo to check
+     * @notice Ensures the caller is a valid AMO
+     * @param amoAddress Address of the AMO to check
      */
     modifier validAmo(address amoAddress) {
         require(Amos[amoAddress], "Invalid Amo");
         _;
     }
 
-    /* ========== Amo MANAGEMENT FUNCTIONS ========== */
+    /* ========== AMO MANAGEMENT FUNCTIONS ========== */
 
     /**
-     * @notice Enables an Amo
-     * @param amo Address of the Amo to enable
+     * @notice Enables an AMO
+     * @param amo Address of the AMO to enable
      */
     function enableAmo(address amo) external onlyOwner {
         Amos[amo] = true;
     }
 
     /**
-     * @notice Disables an Amo
-     * @param amo Address of the Amo to disable
+     * @notice Disables an AMO
+     * @param amo Address of the AMO to disable
      */
     function disableAmo(address amo) external onlyOwner {
         Amos[amo] = false;
@@ -102,8 +102,8 @@ contract UbiquityAmoMinter is Ownable {
     /* ========== COLLATERAL FUNCTIONS ========== */
 
     /**
-     * @notice Transfers collateral to the specified Amo
-     * @param destinationAmo Address of the Amo to receive collateral
+     * @notice Transfers collateral to the specified AMO
+     * @param destinationAmo Address of the AMO to receive collateral
      * @param collateralAmount Amount of collateral to transfer
      */
     function giveCollateralToAmo(
@@ -129,14 +129,14 @@ contract UbiquityAmoMinter is Ownable {
         // Borrow collateral from the pool
         pool.amoMinterBorrow(collateralAmount);
 
-        // Transfer collateral to the Amo
+        // Transfer collateral to the AMO
         collateralToken.safeTransfer(destinationAmo, collateralAmount);
 
         emit CollateralGivenToAmo(destinationAmo, collateralAmount);
     }
 
     /**
-     * @notice Receives collateral back from an Amo
+     * @notice Receives collateral back from an AMO
      * @param collateralAmount Amount of collateral being returned
      */
     function receiveCollateralFromAmo(
