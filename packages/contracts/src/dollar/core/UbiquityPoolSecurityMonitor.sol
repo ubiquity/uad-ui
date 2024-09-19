@@ -92,12 +92,12 @@ contract UbiquityPoolSecurityMonitor is Initializable, UUPSUpgradeable {
                 .div(liquidityVertex);
 
             if (liquidityDiffPercentage >= thresholdPercentage) {
+                monitorPaused = true;
                 // TODO: Pause the UbiquityDollarToken
 
                 // Pause LibUbiquityPool by disabling collateral
                 _pauseLibUbiquityPool();
 
-                monitorPaused = true;
                 emit MonitorPaused(
                     currentCollateralLiquidity,
                     liquidityDiffPercentage
