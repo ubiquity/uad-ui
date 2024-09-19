@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {UbiquityAmoMinter} from "../core/UbiquityAmoMinter.sol";
+import {IAmo} from "../interfaces/IAmo.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -14,7 +15,7 @@ import {IRewardsController} from "@aavev3-periphery/contracts/rewards/interfaces
  * @notice AMO to interact with Aave V3 and manage rewards and borrowing mechanisms.
  * @notice Can receive collateral from UbiquityAmoMinter and interact with Aave's V3 pool.
  */
-contract AaveAmo is Ownable {
+contract AaveAmo is IAmo, Ownable {
     using SafeERC20 for ERC20;
 
     /// @notice UbiquityAmoMinter instance
@@ -185,7 +186,7 @@ contract AaveAmo is Ownable {
      */
     function returnCollateralToMinter(
         uint256 collateralAmount
-    ) public onlyOwner {
+    ) public override onlyOwner {
         ERC20 collateralToken = amoMinter.collateralToken();
 
         if (collateralAmount == 0) {
@@ -203,7 +204,9 @@ contract AaveAmo is Ownable {
      * @notice Sets the AMO minter address
      * @param _amoMinterAddress New address of the AMO minter
      */
-    function setAmoMinter(address _amoMinterAddress) external onlyOwner {
+    function setAmoMinter(
+        address _amoMinterAddress
+    ) external override onlyOwner {
         amoMinter = UbiquityAmoMinter(_amoMinterAddress);
 
         emit AmoMinterSet(_amoMinterAddress);
