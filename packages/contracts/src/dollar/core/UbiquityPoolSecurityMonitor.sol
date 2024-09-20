@@ -7,6 +7,8 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 import {AccessControlFacet} from "../facets/AccessControlFacet.sol";
 import {UbiquityPoolFacet} from "../facets/UbiquityPoolFacet.sol";
 import {LibUbiquityPool} from "../libraries/LibUbiquityPool.sol";
+import {ERC20Ubiquity} from "./ERC20Ubiquity.sol";
+import {ManagerFacet} from "../facets/ManagerFacet.sol";
 import "../libraries/Constants.sol";
 import "forge-std/console.sol";
 
@@ -15,6 +17,7 @@ contract UbiquityPoolSecurityMonitor is Initializable, UUPSUpgradeable {
 
     AccessControlFacet public accessControlFacet;
     UbiquityPoolFacet public ubiquityPoolFacet;
+    ManagerFacet public managerFacet;
     uint256 public liquidityVertex;
     bool public monitorPaused;
     uint256 public thresholdPercentage;
@@ -42,17 +45,37 @@ contract UbiquityPoolSecurityMonitor is Initializable, UUPSUpgradeable {
 
     function initialize(
         address _accessControlFacet,
-        address _ubiquityPoolFacet
+        address _ubiquityPoolFacet,
+        address _managerFacet
     ) public initializer {
         thresholdPercentage = 30;
 
         accessControlFacet = AccessControlFacet(_accessControlFacet);
         ubiquityPoolFacet = UbiquityPoolFacet(_ubiquityPoolFacet);
+        managerFacet = ManagerFacet(_managerFacet);
     }
 
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyMonitorAdmin {}
+
+    function setManagerFacet(
+        address _newManagerFacet
+    ) external onlyMonitorAdmin {
+        managerFacet = ManagerFacet(_newManagerFacet);
+    }
+
+    function setUbiquityPoolFacet(
+        address _newUbiquityPoolFacet
+    ) external onlyMonitorAdmin {
+        ubiquityPoolFacet = UbiquityPoolFacet(_newUbiquityPoolFacet);
+    }
+
+    function setAccessControlFacet(
+        address _newAccessControlFacet
+    ) external onlyMonitorAdmin {
+        accessControlFacet = AccessControlFacet(_newAccessControlFacet);
+    }
 
     function setThresholdPercentage(
         uint256 _newThresholdPercentage
@@ -94,7 +117,8 @@ contract UbiquityPoolSecurityMonitor is Initializable, UUPSUpgradeable {
             if (liquidityDiffPercentage >= thresholdPercentage) {
                 monitorPaused = true;
 
-                // TODO: Pause the UbiquityDollarToken
+                // Pause the UbiquityDollarToken
+                _pauseUbiquityDollarToken();
 
                 // Pause LibUbiquityPool by disabling collateral
                 _pauseLibUbiquityPool();
@@ -121,5 +145,12 @@ contract UbiquityPoolSecurityMonitor is Initializable, UUPSUpgradeable {
                 continue;
             }
         }
+    }
+
+    function _pauseUbiquityDollarToken() internal {
+        ERC20Ubiquity dollarToken = ERC20Ubiquity(
+            managerFacet.dollarTokenAddress()
+        );
+        dollarToken.pause();
     }
 }

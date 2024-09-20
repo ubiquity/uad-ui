@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../../../src/dollar/core/UbiquityPoolSecurityMonitor.sol";
 import "../../helpers/LocalTestHelper.sol";
 import {DiamondTestSetup} from "../../../test/diamond/DiamondTestSetup.sol";
-import {DEFAULT_ADMIN_ROLE} from "../../../src/dollar/libraries/Constants.sol";
+import {DEFAULT_ADMIN_ROLE, PAUSER_ROLE} from "../../../src/dollar/libraries/Constants.sol";
 import {MockChainLinkFeed} from "../../../src/dollar/mocks/MockChainLinkFeed.sol";
 import {MockERC20} from "../../../src/dollar/mocks/MockERC20.sol";
 import {MockCurveStableSwapNG} from "../../../src/dollar/mocks/MockCurveStableSwapNG.sol";
@@ -16,6 +16,9 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     UbiquityPoolSecurityMonitor monitor;
     address defenderRelayer = address(0x456);
     address unauthorized = address(0x123);
+    address newManagerFacet = address(0x457);
+    address newUbiquityPoolFacet = address(0x458);
+    address newAccessControlFacet = address(0x459);
 
     MockERC20 collateralToken;
     MockERC20 stableToken;
@@ -144,10 +147,12 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         monitor = new UbiquityPoolSecurityMonitor();
         monitor.initialize(
             address(accessControlFacet),
-            address(ubiquityPoolFacet)
+            address(ubiquityPoolFacet),
+            address(managerFacet)
         );
 
         accessControlFacet.grantRole(DEFAULT_ADMIN_ROLE, address(monitor));
+        accessControlFacet.grantRole(PAUSER_ROLE, address(monitor));
 
         // stop being admin
         vm.stopPrank();
@@ -162,6 +167,36 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
 
         vm.prank(user);
         ubiquityPoolFacet.mintDollar(0, 1e18, 0.9e18, 1e18, 0, true);
+    }
+
+    function testSetManagerFacet() public {
+        vm.prank(admin);
+        monitor.setManagerFacet(newManagerFacet);
+    }
+
+    function testUnauthorizedSetManagerFacet() public {
+        vm.expectRevert("Ubiquity Pool Security Monitor: not admin");
+        monitor.setManagerFacet(newManagerFacet);
+    }
+
+    function testSetUbiquityPoolFacet() public {
+        vm.prank(admin);
+        monitor.setUbiquityPoolFacet(newUbiquityPoolFacet);
+    }
+
+    function testUnauthorizedSetUbiquityPoolFacet() public {
+        vm.expectRevert("Ubiquity Pool Security Monitor: not admin");
+        monitor.setUbiquityPoolFacet(newUbiquityPoolFacet);
+    }
+
+    function testSetAccessControlFacet() public {
+        vm.prank(admin);
+        monitor.setAccessControlFacet(newAccessControlFacet);
+    }
+
+    function testUnauthorizedSetAccessControlFacet() public {
+        vm.expectRevert("Ubiquity Pool Security Monitor: not admin");
+        monitor.setAccessControlFacet(newAccessControlFacet);
     }
 
     function testSetThresholdPercentage() public {
@@ -230,6 +265,16 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         assertTrue(
             monitorPaused,
             "Monitor should be paused after liquidity drop"
+        );
+
+        ERC20Ubiquity dollarToken = ERC20Ubiquity(
+            managerFacet.dollarTokenAddress()
+        );
+        bool dollarIsPaused = dollarToken.paused();
+
+        assertTrue(
+            dollarIsPaused,
+            "Dollar should be paused after liquidity drop"
         );
     }
 
