@@ -106,28 +106,38 @@ contract UbiquityPoolSecurityMonitor is Initializable, UUPSUpgradeable {
         require(!monitorPaused, "Monitor paused");
 
         if (currentCollateralLiquidity > liquidityVertex) {
-            liquidityVertex = currentCollateralLiquidity;
-            emit LiquidityVertexUpdated(liquidityVertex);
+            _updateLiquidityVertex(currentCollateralLiquidity);
         } else {
-            uint256 liquidityDiffPercentage = liquidityVertex
-                .sub(currentCollateralLiquidity)
-                .mul(100)
-                .div(liquidityVertex);
+            _checkThresholdPercentage(currentCollateralLiquidity);
+        }
+    }
 
-            if (liquidityDiffPercentage >= thresholdPercentage) {
-                monitorPaused = true;
+    function _updateLiquidityVertex(uint256 _newLiquidityVertex) internal {
+        liquidityVertex = _newLiquidityVertex;
+        emit LiquidityVertexUpdated(liquidityVertex);
+    }
 
-                // Pause the UbiquityDollarToken
-                _pauseUbiquityDollarToken();
+    function _checkThresholdPercentage(
+        uint256 _currentCollateralLiquidity
+    ) internal {
+        uint256 liquidityDiffPercentage = liquidityVertex
+            .sub(_currentCollateralLiquidity)
+            .mul(100)
+            .div(liquidityVertex);
 
-                // Pause LibUbiquityPool by disabling collateral
-                _pauseLibUbiquityPool();
+        if (liquidityDiffPercentage >= thresholdPercentage) {
+            monitorPaused = true;
 
-                emit MonitorPaused(
-                    currentCollateralLiquidity,
-                    liquidityDiffPercentage
-                );
-            }
+            // Pause the UbiquityDollarToken
+            _pauseUbiquityDollarToken();
+
+            // Pause LibUbiquityPool by disabling collateral
+            _pauseLibUbiquityPool();
+
+            emit MonitorPaused(
+                _currentCollateralLiquidity,
+                liquidityDiffPercentage
+            );
         }
     }
 
