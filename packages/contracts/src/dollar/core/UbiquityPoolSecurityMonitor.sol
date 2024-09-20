@@ -148,9 +148,7 @@ contract UbiquityPoolSecurityMonitor is Initializable, UUPSUpgradeable {
     }
 
     function _pauseUbiquityDollarToken() internal {
-        ERC20Ubiquity dollarToken = ERC20Ubiquity(
-            managerFacet.dollarTokenAddress()
-        );
-        dollarToken.pause();
+        ERC20Ubiquity dollar = ERC20Ubiquity(managerFacet.dollarTokenAddress());
+        dollar.pause();
     }
 }
