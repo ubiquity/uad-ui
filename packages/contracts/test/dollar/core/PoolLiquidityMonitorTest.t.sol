@@ -21,6 +21,9 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     address newAccessControlFacet = address(0x459);
 
     MockERC20 collateralToken;
+    MockERC20 collateralToken2;
+    MockERC20 collateralToken3;
+
     MockERC20 stableToken;
     MockERC20 wethToken;
 
@@ -41,6 +44,9 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         vm.startPrank(admin);
 
         collateralToken = new MockERC20("COLLATERAL", "CLT", 18);
+        collateralToken2 = new MockERC20("COLLATERAL-2", "CLT", 18);
+        collateralToken3 = new MockERC20("COLLATERAL-3", "CLT", 18);
+
         wethToken = new MockERC20("WETH", "WETH", 18);
         stableToken = new MockERC20("STABLE", "STABLE", 18);
 
@@ -62,6 +68,16 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         uint256 poolCeiling = 50_000e18; // max 50_000 of collateral tokens is allowed
         ubiquityPoolFacet.addCollateralToken(
             address(collateralToken),
+            address(collateralTokenPriceFeed),
+            poolCeiling
+        );
+        ubiquityPoolFacet.addCollateralToken(
+            address(collateralToken2),
+            address(collateralTokenPriceFeed),
+            poolCeiling
+        );
+        ubiquityPoolFacet.addCollateralToken(
+            address(collateralToken3),
             address(collateralTokenPriceFeed),
             poolCeiling
         );
@@ -104,6 +120,16 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
             address(collateralTokenPriceFeed), // price feed address
             1 days // price feed staleness threshold in seconds
         );
+        ubiquityPoolFacet.setCollateralChainLinkPriceFeed(
+            address(collateralToken2), // collateral token address
+            address(collateralTokenPriceFeed), // price feed address
+            1 days // price feed staleness threshold in seconds
+        );
+        ubiquityPoolFacet.setCollateralChainLinkPriceFeed(
+            address(collateralToken3), // collateral token address
+            address(collateralTokenPriceFeed), // price feed address
+            1 days // price feed staleness threshold in seconds
+        );
 
         // set price feed for ETH/USD pair
         ubiquityPoolFacet.setEthUsdChainLinkPriceFeed(
@@ -119,6 +145,9 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
 
         // enable collateral at index 0
         ubiquityPoolFacet.toggleCollateral(0);
+        ubiquityPoolFacet.toggleCollateral(1);
+        ubiquityPoolFacet.toggleCollateral(2);
+
         // set mint and redeem initial fees
         ubiquityPoolFacet.setFees(
             0, // collateral index
@@ -161,12 +190,21 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         deal(address(governanceToken), user, 2000e18);
         // mint 2000 collateral tokens to the user
         collateralToken.mint(address(user), 2000e18);
-        // user approves the pool to transfer collateral
-        vm.prank(user);
-        collateralToken.approve(address(ubiquityPoolFacet), 100e18);
+        collateralToken2.mint(address(user), 2000e18);
+        collateralToken3.mint(address(user), 2000e18);
 
-        vm.prank(user);
+        vm.startPrank(user);
+        // user approves the pool to transfer collateral
+        // vm.prank(user);
+        collateralToken.approve(address(ubiquityPoolFacet), 100e18);
+        collateralToken2.approve(address(ubiquityPoolFacet), 100e18);
+        collateralToken3.approve(address(ubiquityPoolFacet), 100e18);
+
         ubiquityPoolFacet.mintDollar(0, 1e18, 0.9e18, 1e18, 0, true);
+        ubiquityPoolFacet.mintDollar(1, 1e18, 0.9e18, 1e18, 0, true);
+        ubiquityPoolFacet.mintDollar(2, 1e18, 0.9e18, 1e18, 0, true);
+
+        vm.stopPrank();
     }
 
     function testSetManagerFacet() public {
@@ -245,14 +283,14 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         monitor.checkLiquidityVertex();
     }
 
-    function testLiquidityDropBelowVertex() public {
+    function testLiquidityDropBelowVertexThreshold() public {
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
         curveDollarPlainPool.updateMockParams(0.99e18);
 
         vm.prank(user);
-        ubiquityPoolFacet.redeemDollar(0, 5e17, 0, 0);
+        ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
 
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
@@ -275,6 +313,76 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         assertTrue(
             dollarIsPaused,
             "Dollar should be paused after liquidity drop"
+        );
+    }
+
+    function testLiquidityDropBelowVertex() public {
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        curveDollarPlainPool.updateMockParams(0.99e18);
+
+        vm.prank(user);
+        ubiquityPoolFacet.redeemDollar(0, 1e17, 0, 0);
+
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        ubiquityPoolFacet.collateralInformation(address(collateralToken));
+
+        bool monitorPaused = monitor.monitorPaused();
+
+        assertFalse(
+            monitorPaused,
+            "Monitor should Not be paused after liquidity drop"
+        );
+    }
+
+    function testLiquidityDropBelowVertexThresholdAndInvalidCollateral()
+        public
+    {
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        curveDollarPlainPool.updateMockParams(0.99e18);
+
+        vm.prank(user);
+        ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
+
+        vm.prank(admin);
+        ubiquityPoolFacet.toggleCollateral(0);
+
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        bool monitorPaused = monitor.monitorPaused();
+
+        assertTrue(
+            monitorPaused,
+            "Monitor should be paused after liquidity drop, and any prior manipulation of collateral does not interfere with the ongoing incident management process."
+        );
+    }
+
+    function testLiquidityDropBelowVertexAndInvalidCollateral() public {
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        curveDollarPlainPool.updateMockParams(0.99e18);
+
+        vm.prank(user);
+        ubiquityPoolFacet.redeemDollar(0, 1e17, 0, 0);
+
+        vm.prank(admin);
+        ubiquityPoolFacet.toggleCollateral(0);
+
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        bool monitorPaused = monitor.monitorPaused();
+
+        assertFalse(
+            monitorPaused,
+            "Monitor should Not be paused after liquidity drop, and any prior manipulation of collateral does not affect it"
         );
     }
 
