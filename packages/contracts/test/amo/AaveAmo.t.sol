@@ -53,9 +53,7 @@ contract AaveAmoTest is DiamondTestSetup {
             owner,
             address(amoMinter),
             address(aavePool),
-            address(1),
-            address(rewardsController),
-            address(3)
+            address(rewardsController)
         );
 
         // Enable AaveAmo as a valid Amo
@@ -96,22 +94,12 @@ contract AaveAmoTest is DiamondTestSetup {
         assertEq(address(aaveAmo.aavePool()), address(aavePool));
     }
 
-    function testAaveAmoSetup_ShouldSet_aaveToken() public {
-        // Verify the Aave token was set correctly
-        assertEq(address(aaveAmo.aaveToken()), address(1));
-    }
-
     function testAaveAmoSetup_ShouldSet_aaveRewardsController() public {
         // Verify the Aave rewards controller was set correctly
         assertEq(
             address(aaveAmo.aaveRewardsController()),
             address(rewardsController)
         );
-    }
-
-    function testAaveAmoSetup_ShouldSet_aavePoolDataProvider() public {
-        // Verify the Aave pool data provider was set correctly
-        assertEq(address(aaveAmo.aavePoolDataProvider()), address(3));
     }
 
     function testConstructor_ShouldRevertWhenOwnerIsZeroAddress() public {
@@ -121,9 +109,7 @@ contract AaveAmoTest is DiamondTestSetup {
             address(0), // Invalid owner address
             address(amoMinter),
             address(aavePool),
-            address(1),
-            address(2),
-            address(3)
+            address(rewardsController)
         );
     }
 
@@ -134,9 +120,7 @@ contract AaveAmoTest is DiamondTestSetup {
             owner,
             address(0), // Invalid Amo minter address
             address(aavePool),
-            address(1),
-            address(2),
-            address(3)
+            address(rewardsController)
         );
     }
 
@@ -147,52 +131,20 @@ contract AaveAmoTest is DiamondTestSetup {
             owner,
             address(amoMinter),
             address(0), // Invalid Aave pool address
-            address(1),
-            address(2),
-            address(3)
-        );
-    }
-
-    function testConstructor_ShouldRevertWhenAaveIsZeroAddress() public {
-        // Test with zero address for Aave
-        vm.expectRevert("Aave address cannot be zero");
-        new AaveAmo(
-            owner,
-            address(amoMinter),
-            address(aavePool),
-            address(0), // Invalid Aave address
-            address(2),
-            address(3)
+            address(rewardsController)
         );
     }
 
     function testConstructor_ShouldRevertWhenAaveRewardsControllerIsZeroAddress()
         public
     {
-        // Test with zero address for Aave rewards controller
+        // Test with zero address for Aave
         vm.expectRevert("Aave rewards controller address cannot be zero");
         new AaveAmo(
             owner,
             address(amoMinter),
             address(aavePool),
-            address(1),
-            address(0), // Invalid Aave rewards controller address
-            address(3)
-        );
-    }
-
-    function testConstructor_ShouldRevertWhenAavePoolDataProviderIsZeroAddress()
-        public
-    {
-        // Test with zero address for Aave pool data provider
-        vm.expectRevert("Aave pool data provider address cannot be zero");
-        new AaveAmo(
-            owner,
-            address(amoMinter),
-            address(aavePool),
-            address(1),
-            address(2),
-            address(0) // Invalid Aave pool data provider address
+            address(0) // Invalid Aave rewards controller address
         );
     }
 
@@ -249,86 +201,6 @@ contract AaveAmoTest is DiamondTestSetup {
         assertEq(collateralToken.balanceOf(address(aaveAmo)), withdrawAmount);
     }
 
-    /* ========== Aave Amo BORROW AND REPAY TESTS ========== */
-
-    function testAaveBorrow_ShouldBorrowAssetSuccessfully() public {
-        uint256 depositAmount = 1000e18;
-
-        // Mints collateral to Amo
-        vm.prank(collateralOwner);
-        collateralToken.mint(address(aaveAmo), depositAmount);
-
-        // Owner deposits collateral to Aave Pool
-        vm.prank(owner);
-        aaveAmo.aaveDepositCollateral(address(collateralToken), depositAmount);
-
-        // Check balances before borrow
-        assertApproxEqAbs(
-            aToken.balanceOf(address(aaveAmo)),
-            depositAmount,
-            1e2
-        ); // little error this is due to interest rate
-        assertEq(collateralToken.balanceOf(address(aaveAmo)), 0);
-
-        uint256 borrowAmount = 1e18;
-
-        // Owner borrows asset from Aave Pool
-        vm.prank(owner);
-        aaveAmo.aaveBorrow(
-            address(collateralToken),
-            borrowAmount,
-            interestRateMode
-        );
-
-        // Check if the borrow was successful
-        assertEq(collateralToken.balanceOf(address(aaveAmo)), borrowAmount);
-    }
-
-    function testAaveRepay_ShouldRepayAssetSuccessfully() public {
-        uint256 depositAmount = 1000e18;
-
-        // Mints collateral to Amo
-        vm.prank(collateralOwner);
-        collateralToken.mint(address(aaveAmo), depositAmount);
-
-        // Owner deposits collateral to Aave Pool
-        vm.prank(owner);
-        aaveAmo.aaveDepositCollateral(address(collateralToken), depositAmount);
-
-        // Check balances before borrow
-        assertApproxEqAbs(
-            aToken.balanceOf(address(aaveAmo)),
-            depositAmount,
-            1e2
-        ); // little error this is due to interest rate
-        assertEq(collateralToken.balanceOf(address(aaveAmo)), 0);
-
-        uint256 borrowAmount = 1e18;
-
-        // Owner borrows asset from Aave Pool
-        vm.prank(owner);
-        aaveAmo.aaveBorrow(
-            address(collateralToken),
-            borrowAmount,
-            interestRateMode
-        );
-
-        // Check if the borrow was successful
-        assertEq(collateralToken.balanceOf(address(aaveAmo)), borrowAmount);
-
-        // Owner repays asset to Aave Pool
-        vm.prank(owner);
-        aaveAmo.aaveRepay(
-            address(collateralToken),
-            borrowAmount,
-            interestRateMode
-        );
-
-        // Check if the repayment was successful
-        assertEq(collateralToken.balanceOf(address(aaveAmo)), 0);
-        assertEq(vToken.scaledBalanceOf(address(aaveAmo)), 0);
-    }
-
     function testAaveDeposit_ShouldRevertIfNotOwner() public {
         uint256 depositAmount = 1e18;
 
@@ -347,32 +219,6 @@ contract AaveAmoTest is DiamondTestSetup {
         aaveAmo.aaveWithdrawCollateral(
             address(collateralToken),
             withdrawAmount
-        );
-    }
-
-    function testAaveBorrow_ShouldRevertIfNotOwner() public {
-        uint256 borrowAmount = 1e18;
-
-        // Attempting to repay as a non-owner should revert
-        vm.prank(nonAmo);
-        vm.expectRevert("Ownable: caller is not the owner");
-        aaveAmo.aaveBorrow(
-            address(collateralToken),
-            borrowAmount,
-            interestRateMode
-        );
-    }
-
-    function testAaveRepay_ShouldRevertIfNotOwner() public {
-        uint256 borrowAmount = 1e18;
-
-        // Attempting to repay as a non-owner should revert
-        vm.prank(nonAmo);
-        vm.expectRevert("Ownable: caller is not the owner");
-        aaveAmo.aaveRepay(
-            address(collateralToken),
-            borrowAmount,
-            interestRateMode
         );
     }
 

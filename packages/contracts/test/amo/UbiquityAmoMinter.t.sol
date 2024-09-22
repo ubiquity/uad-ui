@@ -38,9 +38,7 @@ contract UbiquityAmoMinterTest is DiamondTestSetup {
             owner,
             address(amoMinter),
             address(1),
-            address(2),
-            address(3),
-            address(4)
+            address(2)
         );
 
         // Enable AaveAmo as a valid Amo
