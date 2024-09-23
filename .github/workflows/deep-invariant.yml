@@ -20,7 +20,7 @@ jobs:
       - name: Setup Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: nightly-5be158ba6dc7c79a8f6302026fe60fc01606b33b
+          version: nightly-5be158ba6dc7c798a6f032026fe60fc01686b33b
       
       - name: Forge install
         working-directory: packages/contracts
