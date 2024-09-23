@@ -1,5 +1,5 @@
 # DollarMintCalculatorFacet
-[Git Source](https://github.com/ubiquity/ubiquity-dollar/blob/0cae71618450aff584ed3369a18e2ba12900dc6b/src/dollar/facets/DollarMintCalculatorFacet.sol)
+[Git Source](https://github.com/ubiquity/ubiquity-dollar/blob/c8e4c35e03024dbea12740d3dfedc8e8a0bad6a8/src/dollar/facets/DollarMintCalculatorFacet.sol)
 
 **Inherits:**
 [IDollarMintCalculator](/src/dollar/interfaces/IDollarMintCalculator.sol/interface.IDollarMintCalculator.md)
