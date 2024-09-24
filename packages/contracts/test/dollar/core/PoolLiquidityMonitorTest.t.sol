@@ -38,6 +38,11 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
 
     address user = address(1);
 
+    event MonitorPaused(uint256 collateralLiquidity, uint256 diffPercentage);
+    event VertexDropped();
+    event PausedToggled(bool paused);
+    event LiquidityVertexUpdated(uint256 collateralLiquidity);
+
     function setUp() public override {
         super.setUp();
 
@@ -194,8 +199,7 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         collateralToken3.mint(address(user), 2000e18);
 
         vm.startPrank(user);
-        // user approves the pool to transfer collateral
-        // vm.prank(user);
+        // user approves the pool to transfer collaterals
         collateralToken.approve(address(ubiquityPoolFacet), 100e18);
         collateralToken2.approve(address(ubiquityPoolFacet), 100e18);
         collateralToken3.approve(address(ubiquityPoolFacet), 100e18);
@@ -252,6 +256,9 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     }
 
     function testDropLiquidityVertex() public {
+        vm.expectEmit(true, true, true, false);
+        emit VertexDropped();
+
         vm.prank(admin);
         monitor.dropLiquidityVertex();
     }
@@ -262,6 +269,9 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     }
 
     function testTogglePaused() public {
+        vm.expectEmit(true, true, true, false);
+        emit PausedToggled(true);
+
         vm.prank(admin);
         monitor.togglePaused();
     }
@@ -272,6 +282,12 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     }
 
     function testCheckLiquidity() public {
+        uint256 currentCollateralLiquidity = ubiquityPoolFacet
+            .collateralUsdBalance();
+
+        vm.expectEmit(true, true, true, false);
+        emit LiquidityVertexUpdated(currentCollateralLiquidity);
+
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
     }
@@ -280,6 +296,25 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         vm.prank(unauthorized);
         vm.expectRevert("Ubiquity Pool Security Monitor: not defender relayer");
 
+        monitor.checkLiquidityVertex();
+    }
+
+    function testLiquidityDropBelowVertexThresholdEvent() public {
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        curveDollarPlainPool.updateMockParams(0.99e18);
+
+        vm.prank(user);
+        ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
+
+        uint256 currentCollateralLiquidity = ubiquityPoolFacet
+            .collateralUsdBalance();
+
+        vm.expectEmit(true, true, true, false);
+        emit MonitorPaused(currentCollateralLiquidity, 32);
+
+        vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
     }
 
@@ -387,6 +422,9 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     }
 
     function testCheckLiquidityWhenPaused() public {
+        vm.expectEmit(true, true, true, false);
+        emit PausedToggled(true);
+
         vm.prank(admin);
         monitor.togglePaused();
 
