@@ -209,6 +209,9 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         ubiquityPoolFacet.mintDollar(2, 1e18, 0.9e18, 1e18, 0, true);
 
         vm.stopPrank();
+
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
     }
 
     function testSetManagerFacet() public {
@@ -282,6 +285,9 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     }
 
     function testCheckLiquidity() public {
+        vm.prank(user);
+        ubiquityPoolFacet.mintDollar(1, 1e18, 0.9e18, 1e18, 0, true);
+
         uint256 currentCollateralLiquidity = ubiquityPoolFacet
             .collateralUsdBalance();
 
@@ -302,9 +308,6 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     function testMonitorPausedEventEmittedAfterLiquidityDropBelowThreshold()
         public
     {
-        vm.prank(defenderRelayer);
-        monitor.checkLiquidityVertex();
-
         curveDollarPlainPool.updateMockParams(0.99e18);
 
         vm.prank(user);
@@ -321,9 +324,6 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     }
 
     function testMonitorPausedRevertAfterLiquidityDropBelowThreshold() public {
-        vm.prank(defenderRelayer);
-        monitor.checkLiquidityVertex();
-
         curveDollarPlainPool.updateMockParams(0.99e18);
 
         vm.prank(user);
@@ -340,9 +340,6 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     function testMonitorAndDollarPauseAfterLiquidityDropBelowThreshold()
         public
     {
-        vm.prank(defenderRelayer);
-        monitor.checkLiquidityVertex();
-
         curveDollarPlainPool.updateMockParams(0.99e18);
 
         vm.prank(user);
@@ -373,9 +370,6 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     }
 
     function testLiquidityDropDoesNotPauseMonitorBelowThreshold() public {
-        vm.prank(defenderRelayer);
-        monitor.checkLiquidityVertex();
-
         curveDollarPlainPool.updateMockParams(0.99e18);
 
         vm.prank(user);
@@ -397,9 +391,6 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     function testLiquidityDropPausesMonitorWhenCollateralToggledAfterThreshold()
         public
     {
-        vm.prank(defenderRelayer);
-        monitor.checkLiquidityVertex();
-
         curveDollarPlainPool.updateMockParams(0.99e18);
 
         vm.prank(user);
@@ -422,9 +413,6 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     function testLiquidityDropDoesNotPauseMonitorWhenCollateralToggled()
         public
     {
-        vm.prank(defenderRelayer);
-        monitor.checkLiquidityVertex();
-
         curveDollarPlainPool.updateMockParams(0.99e18);
 
         vm.prank(user);
@@ -460,9 +448,6 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     function testMintDollarRevertsWhenCollateralDisabledDueToLiquidityDrop()
         public
     {
-        vm.prank(defenderRelayer);
-        monitor.checkLiquidityVertex();
-
         curveDollarPlainPool.updateMockParams(0.99e18);
 
         vm.prank(user);
@@ -483,9 +468,6 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     function testRedeemDollarRevertsWhenCollateralDisabledDueToLiquidityDrop()
         public
     {
-        vm.prank(defenderRelayer);
-        monitor.checkLiquidityVertex();
-
         curveDollarPlainPool.updateMockParams(0.99e18);
 
         vm.prank(user);
@@ -502,9 +484,6 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     function testDollarTokenRevertsOnTransferWhenPausedDueToLiquidityDrop()
         public
     {
-        vm.prank(defenderRelayer);
-        monitor.checkLiquidityVertex();
-
         curveDollarPlainPool.updateMockParams(0.99e18);
 
         vm.prank(user);
