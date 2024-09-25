@@ -299,7 +299,9 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         monitor.checkLiquidityVertex();
     }
 
-    function testLiquidityDropBelowVertexThresholdEvent() public {
+    function testMonitorPausedEventEmittedAfterLiquidityDropBelowThreshold()
+        public
+    {
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
@@ -318,7 +320,26 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         monitor.checkLiquidityVertex();
     }
 
-    function testLiquidityDropBelowVertexThreshold() public {
+    function testMonitorPausedRevertAfterLiquidityDropBelowThreshold() public {
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        curveDollarPlainPool.updateMockParams(0.99e18);
+
+        vm.prank(user);
+        ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
+
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        vm.expectRevert("Monitor paused");
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+    }
+
+    function testMonitorAndDollarPauseAfterLiquidityDropBelowThreshold()
+        public
+    {
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
@@ -351,7 +372,7 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         );
     }
 
-    function testLiquidityDropBelowVertex() public {
+    function testLiquidityDropDoesNotPauseMonitorBelowThreshold() public {
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
@@ -373,7 +394,7 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         );
     }
 
-    function testLiquidityDropBelowVertexThresholdAndInvalidCollateral()
+    function testLiquidityDropPausesMonitorWhenCollateralToggledAfterThreshold()
         public
     {
         vm.prank(defenderRelayer);
@@ -398,7 +419,9 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         );
     }
 
-    function testLiquidityDropBelowVertexAndInvalidCollateral() public {
+    function testLiquidityDropDoesNotPauseMonitorWhenCollateralToggled()
+        public
+    {
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
@@ -421,7 +444,7 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         );
     }
 
-    function testCheckLiquidityWhenPaused() public {
+    function testCheckLiquidityRevertsWhenMonitorIsPaused() public {
         vm.expectEmit(true, true, true, false);
         emit PausedToggled(true);
 
@@ -432,5 +455,76 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
 
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
+    }
+
+    function testMintDollarRevertsWhenCollateralDisabledDueToLiquidityDrop()
+        public
+    {
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        curveDollarPlainPool.updateMockParams(0.99e18);
+
+        vm.prank(user);
+        ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
+
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        uint256 collateralCount = 3;
+        for (uint256 i = 0; i < collateralCount; i++) {
+            vm.expectRevert("Collateral disabled");
+
+            vm.prank(user);
+            ubiquityPoolFacet.mintDollar(i, 1e18, 0.9e18, 1e18, 0, true);
+        }
+    }
+
+    function testRedeemDollarRevertsWhenCollateralDisabledDueToLiquidityDrop()
+        public
+    {
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        curveDollarPlainPool.updateMockParams(0.99e18);
+
+        vm.prank(user);
+        ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
+
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        vm.expectRevert("Collateral disabled");
+        vm.prank(user);
+        ubiquityPoolFacet.redeemDollar(1, 1e18, 0, 0);
+    }
+
+    function testDollarTokenRevertsOnTransferWhenPausedDueToLiquidityDrop()
+        public
+    {
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        curveDollarPlainPool.updateMockParams(0.99e18);
+
+        vm.prank(user);
+        ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
+
+        vm.prank(defenderRelayer);
+        monitor.checkLiquidityVertex();
+
+        bool isPaused = dollarToken.paused();
+        assertTrue(
+            isPaused,
+            "Expected the Dollar token to be paused after the liquidity drop"
+        );
+
+        ERC20Ubiquity dollarToken = ERC20Ubiquity(
+            managerFacet.dollarTokenAddress()
+        );
+
+        vm.expectRevert("Pausable: paused");
+        vm.prank(user);
+        dollarToken.transfer(address(0x123), 1e18);
     }
 }
