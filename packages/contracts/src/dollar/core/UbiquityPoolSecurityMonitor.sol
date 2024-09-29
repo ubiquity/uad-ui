@@ -22,9 +22,9 @@ contract UbiquityPoolSecurityMonitor is Initializable, UUPSUpgradeable {
     bool public monitorPaused;
     uint256 public thresholdPercentage;
 
-    event LiquidityVertexUpdated(uint256 collateralLiquidity);
+    event LiquidityVertexUpdated(uint256 liquidityVertex);
+    event LiquidityVertexDropped(uint256 liquidityVertex);
     event MonitorPaused(uint256 collateralLiquidity, uint256 diffPercentage);
-    event VertexDropped();
     event PausedToggled(bool paused);
 
     modifier onlyDefender() {
@@ -95,19 +95,20 @@ contract UbiquityPoolSecurityMonitor is Initializable, UUPSUpgradeable {
 
         liquidityVertex = currentCollateralLiquidity;
 
-        emit VertexDropped();
+        emit LiquidityVertexDropped(liquidityVertex);
     }
 
     function checkLiquidityVertex() external onlyDefender {
+        require(!monitorPaused, "Monitor paused");
+
         uint256 currentCollateralLiquidity = ubiquityPoolFacet
             .collateralUsdBalance();
 
         require(currentCollateralLiquidity > 0, "Insufficient liquidity");
-        require(!monitorPaused, "Monitor paused");
 
         if (currentCollateralLiquidity > liquidityVertex) {
             _updateLiquidityVertex(currentCollateralLiquidity);
-        } else {
+        } else if (currentCollateralLiquidity < liquidityVertex) {
             _checkThresholdPercentage(currentCollateralLiquidity);
         }
     }

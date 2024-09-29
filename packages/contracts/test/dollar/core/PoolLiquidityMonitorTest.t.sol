@@ -39,7 +39,7 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     address user = address(1);
 
     event MonitorPaused(uint256 collateralLiquidity, uint256 diffPercentage);
-    event VertexDropped();
+    event LiquidityVertexDropped(uint256 liquidityVertex);
     event PausedToggled(bool paused);
     event LiquidityVertexUpdated(uint256 collateralLiquidity);
 
@@ -259,8 +259,11 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
     }
 
     function testDropLiquidityVertex() public {
+        uint256 currentCollateralLiquidity = ubiquityPoolFacet
+            .collateralUsdBalance();
+
         vm.expectEmit(true, true, true, false);
-        emit VertexDropped();
+        emit LiquidityVertexDropped(currentCollateralLiquidity);
 
         vm.prank(admin);
         monitor.dropLiquidityVertex();
@@ -408,6 +411,14 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
             monitorPaused,
             "Monitor should be paused after liquidity drop, and any prior manipulation of collateral does not interfere with the ongoing incident management process."
         );
+
+        address[] memory allCollaterals = ubiquityPoolFacet.allCollaterals();
+        for (uint256 i = 0; i < allCollaterals.length; i++) {
+            vm.expectRevert("Invalid collateral");
+
+            vm.prank(user);
+            ubiquityPoolFacet.collateralInformation(allCollaterals[i]);
+        }
     }
 
     function testLiquidityDropDoesNotPauseMonitorWhenCollateralToggled()
