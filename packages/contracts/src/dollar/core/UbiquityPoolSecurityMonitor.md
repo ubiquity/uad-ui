@@ -10,7 +10,7 @@ The workflow consists of four key components:
 4. **[OpenZeppelin Monitor](https://docs.openzeppelin.com/defender/module/monitor)**: Listens for the `MonitorPaused` event and sends alerts via email or other designated channels.
 
 ### Workflow diagram
-![Workflow Diagram](../../../../../utils/UbiquityPoolSecurityMonitorWorkflow.drawio.png)
+![Workflow Diagram](../../../../../utils/ubiquity-pool-security-monitor-workflow.png)
 
 
 ### OpenZeppelin Defender Setup
