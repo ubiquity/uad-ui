@@ -23,7 +23,10 @@ Complete only **Part 1** of the [OpenZeppelin Defender Relayer tutorial](https:/
 
 #### 2. Actions Setup
 
-Follow the [OpenZeppelin Defender Actions tutorial](https://docs.openzeppelin.com/defender/tutorial/actions) to set up Actions. While configuring your Action, choose the Relayer you set up in step 1, and use the following script for your newly created Action:
+Follow the [OpenZeppelin Defender Actions tutorial](https://docs.openzeppelin.com/defender/tutorial/actions) to set up Actions. While configuring your Action: 
+  - choose the Relayer you set up in step 1
+  - choose `Schedule` as trigger
+  - use the following script for your newly created Action:
 
 ```javascript
 const { Defender } = require('@openzeppelin/defender-sdk');
@@ -32,7 +35,7 @@ exports.handler = async function (credentials) {
   const client = new Defender(credentials);
 
   const txRes = await client.relaySigner.sendTransaction({
-    to: '0xb60ce3bf27B86d3099F48dbcDB52F5538402EF7B', // Address of UbiquityPoolSecurityMonitor contract
+    to: '0x0000000000000000000000000000000000000000', // Replace with the actual UbiquityPoolSecurityMonitor contract address
     speed: 'fast',
     data: '0x9ba8a26c', // Encoded function signature for checkLiquidityVertex() of the UbiquityPoolSecurityMonitor
     gasLimit: '80000',
@@ -44,7 +47,11 @@ exports.handler = async function (credentials) {
 
 #### 3. Monitor Setup
 
-Follow the [OpenZeppelin Defender Monitor tutorial](https://docs.openzeppelin.com/defender/tutorial/monitor) to configure a Monitor that listens for the MonitorPaused event emitted by the UbiquityPoolSecurityMonitor contract. Set up your alerts using the desired source (e.g., email or other alerting mechanisms).
+In **Settings -> Notifications**, configure the desired channels you want to use for managing notifications for your monitor.
+
+Follow the [OpenZeppelin Defender Monitor tutorial](https://docs.openzeppelin.com/defender/tutorial/monitor) to configure a Monitor that listens for the MonitorPaused event emitted by the UbiquityPoolSecurityMonitor contract. 
+You will need to pass the ABI array of the **UbiquityPoolSecurityMonitor** contract. Once the ABI is provided, you will be able to choose and subscribe to any event emitted by the contract.
+Then, in the **Monitor's alert section**, select the appropriate alert option for your setup.
 
 
 

@@ -148,7 +148,7 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
             1 days // price feed staleness threshold in seconds
         );
 
-        // enable collateral at index 0
+        // enable collateral at index 0,1,2
         ubiquityPoolFacet.toggleCollateral(0);
         ubiquityPoolFacet.toggleCollateral(1);
         ubiquityPoolFacet.toggleCollateral(2);
