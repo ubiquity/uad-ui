@@ -1,0 +1,4 @@
+# deprecated contracts
+packages/contracts/src/dollar/core/CrediftNft.sol
+packages/contracts/src/dollar/core/StakingShare.sol
+packages/contracts/src/dollar/libraries/LibCreditNftManager.sol
