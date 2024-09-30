@@ -24,7 +24,7 @@ jobs:
           repository: decurity/semgrep-smart-contracts
           path: rules
           
-      - run: semgrep ci --sarif --output=semgrep.sarif --include packages/contracts/src/dollar --verbose || true
+      - run: semgrep ci --sarif --output=semgrep.sarif --include packages/contracts/src/dollar --suppress-errors false || true
         env:
           SEMGREP_RULES: rules/solidity/security
 
