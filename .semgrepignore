@@ -1,4 +1,8 @@
+# mocks
+packages/contracts/src/dollar/mocks
+
 # deprecated contracts
-packages/contracts/src/dollar/core/CrediftNft.sol
+packages/contracts/src/dollar/core/CreditNft.sol
 packages/contracts/src/dollar/core/StakingShare.sol
 packages/contracts/src/dollar/libraries/LibCreditNftManager.sol
+packages/contracts/src/dollar/libraries/LibDollarMintExcess.sol
