@@ -24,10 +24,9 @@ jobs:
           repository: decurity/semgrep-smart-contracts
           path: rules
           
-      - run: semgrep ci --sarif --output=semgrep.sarif --include packages/contracts/src/dollar || true
+      - run: semgrep ci --sarif --output=semgrep.sarif --include packages/contracts/src/dollar --no-suppress-errors
         env:
           SEMGREP_RULES: rules/solidity/security
-          SEMGREP_SUPPRESS_ERRORS: false
 
       - name: Upload findings to GitHub Advanced Security Dashboard
         uses: github/codeql-action/upload-sarif@v2
