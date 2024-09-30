@@ -1,9 +1,13 @@
 name: Run Semgrep
 
 on:
-  push:
-  pull_request:
   workflow_dispatch:
+  push:
+    paths:
+      - '**.sol'
+  pull_request:
+    paths:
+      - '**.sol'
 
 jobs:
   semgrep:
