@@ -1,5 +1,5 @@
 # mocks
-packages/contracts/src/dollar/mocks
+packages/contracts/src/dollar/mocks/
 
 # deprecated contracts
 packages/contracts/src/dollar/core/CreditNft.sol
