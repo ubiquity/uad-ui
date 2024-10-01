@@ -12,7 +12,7 @@ import {MockCurveStableSwapNG} from "../../../src/dollar/mocks/MockCurveStableSw
 import {MockCurveTwocryptoOptimized} from "../../../src/dollar/mocks/MockCurveTwocryptoOptimized.sol";
 import {ERC20Ubiquity} from "../../../src/dollar/core/ERC20Ubiquity.sol";
 
-contract PoolLiquidityMonitorTest is DiamondTestSetup {
+contract UbiquityPoolSecurityMonitorTest is DiamondTestSetup {
     UbiquityPoolSecurityMonitor monitor;
     address defenderRelayer = address(0x456);
     address unauthorized = address(0x123);
@@ -258,15 +258,25 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         monitor.setThresholdPercentage(newThresholdPercentage);
     }
 
+    /**
+     * @notice Tests the dropLiquidityVertex function and ensures the correct event is emitted.
+     * @dev Simulates a call from an account with the DEFAULT_ADMIN_ROLE to drop the liquidity vertex.
+     *      Verifies that the current collateral liquidity is set as the new liquidity vertex and the
+     *      LiquidityVertexDropped event is emitted with the correct value.
+     */
     function testDropLiquidityVertex() public {
+        // Get the current collateral liquidity from the UbiquityPoolFacet
         uint256 currentCollateralLiquidity = ubiquityPoolFacet
             .collateralUsdBalance();
 
+        // Expect the LiquidityVertexDropped event to be emitted with the current collateral liquidity
         vm.expectEmit(true, true, true, false);
         emit LiquidityVertexDropped(currentCollateralLiquidity);
 
+        // Simulate the admin account calling the dropLiquidityVertex function
         vm.prank(admin);
         monitor.dropLiquidityVertex();
+        // The LiquidityVertexDropped event should be emitted with the correct liquidity value
     }
 
     function testUnauthorizedDropLiquidityVertex() public {
@@ -287,16 +297,25 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         monitor.togglePaused();
     }
 
+    /**
+     * @notice Tests the update of liquidity vertex after the collateral liquidity is increased via minting.
+     * @dev Simulates a user increasing liquidity by calling mintDollar and then checks if the liquidity vertex
+     *      is updated correctly when the defender relayer calls checkLiquidityVertex.
+     */
     function testCheckLiquidity() public {
+        // Simulate the user minting dollars to increase the collateral liquidity
         vm.prank(user);
         ubiquityPoolFacet.mintDollar(1, 1e18, 0.9e18, 1e18, 0, true);
 
+        // Fetch the updated collateral liquidity after minting
         uint256 currentCollateralLiquidity = ubiquityPoolFacet
             .collateralUsdBalance();
 
+        // Expect the LiquidityVertexUpdated event to be emitted with the new liquidity value
         vm.expectEmit(true, true, true, false);
         emit LiquidityVertexUpdated(currentCollateralLiquidity);
 
+        // Simulate the defender relayer calling checkLiquidityVertex to update the liquidity vertex
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
     }
@@ -308,6 +327,11 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         monitor.checkLiquidityVertex();
     }
 
+    /**
+     * @notice Tests that the `MonitorPaused` event is emitted when the liquidity drops below the configured threshold.
+     * @dev Simulates a scenario where the collateral liquidity drops below the threshold by redeeming dollars,
+     *      and checks if the monitor pauses and emits the `MonitorPaused` event.
+     */
     function testMonitorPausedEventEmittedAfterLiquidityDropBelowThreshold()
         public
     {
@@ -316,157 +340,223 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
 
+        // Fetch the current collateral liquidity after redemption
         uint256 currentCollateralLiquidity = ubiquityPoolFacet
             .collateralUsdBalance();
 
+        // Expect the MonitorPaused event to be emitted with the current liquidity and percentage drop
         vm.expectEmit(true, true, true, false);
-        emit MonitorPaused(currentCollateralLiquidity, 32);
+        emit MonitorPaused(currentCollateralLiquidity, 32); // 32 represents the percentage difference
 
+        // Simulate the defender relayer calling checkLiquidityVertex to trigger the liquidity check
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
     }
 
+    /**
+     * @notice Tests that the `checkLiquidityVertex` function reverts with "Monitor paused" after the monitor is paused due to liquidity dropping below the threshold.
+     * @dev Simulates a drop in collateral liquidity by redeeming dollars and ensures that once the liquidity drop exceeds the threshold,
+     *      the monitor is paused and subsequent calls to `checkLiquidityVertex` revert with the message "Monitor paused".
+     */
     function testMonitorPausedRevertAfterLiquidityDropBelowThreshold() public {
         curveDollarPlainPool.updateMockParams(0.99e18);
 
+        // Simulate a user redeeming dollars, leading to a decrease in collateral liquidity
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
 
+        // Simulate the defender relayer calling checkLiquidityVertex to trigger the monitor pause
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
+        // Expect a revert with "Monitor paused" message when trying to check liquidity again
         vm.expectRevert("Monitor paused");
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
     }
 
+    /**
+     * @notice Tests that both the monitor and the Ubiquity Dollar are paused after a liquidity drop below the threshold.
+     * @dev Simulates a collateral price drop and ensures that:
+     *      - The monitor is paused after the liquidity drop.
+     *      - The collateral information is no longer valid and reverts with "Invalid collateral".
+     *      - The Ubiquity Dollar token is paused after the liquidity drop.
+     */
     function testMonitorAndDollarPauseAfterLiquidityDropBelowThreshold()
         public
     {
         curveDollarPlainPool.updateMockParams(0.99e18);
 
+        // Simulate a user redeeming dollars, leading to a decrease in collateral liquidity
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
 
+        // Simulate the defender relayer calling checkLiquidityVertex to trigger the monitor pause
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
+        // Expect a revert with "Invalid collateral" when trying to retrieve collateral information
         vm.expectRevert("Invalid collateral");
         ubiquityPoolFacet.collateralInformation(address(collateralToken));
 
+        // Assert that the monitor is paused
         bool monitorPaused = monitor.monitorPaused();
-
         assertTrue(
             monitorPaused,
             "Monitor should be paused after liquidity drop"
         );
 
+        // Assert that the Ubiquity Dollar token is paused
         ERC20Ubiquity dollarToken = ERC20Ubiquity(
             managerFacet.dollarTokenAddress()
         );
         bool dollarIsPaused = dollarToken.paused();
-
         assertTrue(
             dollarIsPaused,
             "Dollar should be paused after liquidity drop"
         );
     }
 
-    function testLiquidityDropDoesNotPauseMonitorBelowThreshold() public {
+    /**
+     * @notice Tests that the monitor is not paused when the liquidity drop does not exceed the configured threshold.
+     * @dev Simulates a small collateral liquidity drop by redeeming dollars and ensures that:
+     *      - The monitor does not pause if the liquidity drop remains above the threshold.
+     *      - Collateral information remains valid and accessible after the liquidity drop.
+     */
+    function testLiquidityDropDoesNotPauseMonitor() public {
         curveDollarPlainPool.updateMockParams(0.99e18);
 
+        // Simulate a user redeeming a small amount of dollars, causing a minor decrease in collateral liquidity
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(0, 1e17, 0, 0);
 
+        // Simulate the defender relayer calling checkLiquidityVertex to verify the monitor status
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
+        // Ensure collateral information remains valid after the minor liquidity drop
         ubiquityPoolFacet.collateralInformation(address(collateralToken));
 
+        // Assert that the monitor is not paused after the liquidity drop
         bool monitorPaused = monitor.monitorPaused();
-
         assertFalse(
             monitorPaused,
             "Monitor should Not be paused after liquidity drop"
         );
     }
 
-    function testLiquidityDropPausesMonitorWhenCollateralToggledAfterThreshold()
-        public
-    {
+    /**
+     * @notice Tests that the monitor is paused after a significant liquidity drop, even when collateral was toggled before.
+     * @dev Simulates a scenario where collateral liquidity drops below the threshold and collateral is toggled prior to the incident.
+     *      Ensures that:
+     *      - The monitor pauses after the liquidity drop.
+     *      - Any collateral that was toggled prior to the liquidity check does not interfere with the monitor's behavior.
+     *      - Collateral information becomes inaccessible after the monitor is paused.
+     */
+    function testLiquidityDropPausesMonitorWhenCollateralToggled() public {
         curveDollarPlainPool.updateMockParams(0.99e18);
 
+        // Simulate a user redeeming dollars, causing a significant liquidity drop
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
 
+        // Simulate the admin toggling the collateral state
         vm.prank(admin);
         ubiquityPoolFacet.toggleCollateral(0);
 
+        // Simulate the defender relayer calling checkLiquidityVertex to trigger the monitor pause
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
+        // Assert that the monitor is paused after the liquidity drop
         bool monitorPaused = monitor.monitorPaused();
-
         assertTrue(
             monitorPaused,
             "Monitor should be paused after liquidity drop, and any prior manipulation of collateral does not interfere with the ongoing incident management process."
         );
 
+        // Ensure that collateral information is inaccessible after the monitor is paused
         address[] memory allCollaterals = ubiquityPoolFacet.allCollaterals();
         for (uint256 i = 0; i < allCollaterals.length; i++) {
             vm.expectRevert("Invalid collateral");
 
+            // Simulate the user trying to access collateral information, expecting a revert
             vm.prank(user);
             ubiquityPoolFacet.collateralInformation(allCollaterals[i]);
         }
     }
 
+    /**
+     * @notice Tests that the monitor is not paused when the liquidity drop does not exceed the threshold, even if collateral is toggled.
+     * @dev Simulates a scenario where collateral liquidity drops but not enough to trigger the monitor pause.
+     *      Ensures that:
+     *      - The monitor remains active after a minor liquidity drop.
+     *      - Any collateral that was toggled prior to the liquidity check does not affect the monitor’s behavior.
+     */
     function testLiquidityDropDoesNotPauseMonitorWhenCollateralToggled()
         public
     {
         curveDollarPlainPool.updateMockParams(0.99e18);
 
+        // Simulate a user redeeming a small amount of dollars, causing a minor liquidity drop
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(0, 1e17, 0, 0);
 
+        // Simulate the admin toggling the collateral state
         vm.prank(admin);
         ubiquityPoolFacet.toggleCollateral(0);
 
+        // Simulate the defender relayer calling checkLiquidityVertex to verify the monitor status
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
+        // Assert that the monitor is not paused after the minor liquidity drop
         bool monitorPaused = monitor.monitorPaused();
-
         assertFalse(
             monitorPaused,
             "Monitor should Not be paused after liquidity drop, and any prior manipulation of collateral does not affect it"
         );
     }
 
+    /**
+     * @notice Tests that `checkLiquidityVertex` reverts with "Monitor paused" when the monitor is manually paused.
+     * @dev Simulates pausing the monitor and ensures that any subsequent calls to `checkLiquidityVertex` revert with the appropriate error message.
+     */
     function testCheckLiquidityRevertsWhenMonitorIsPaused() public {
+        // Expect the PausedToggled event to be emitted when the monitor is paused
         vm.expectEmit(true, true, true, false);
         emit PausedToggled(true);
 
+        // Simulate the admin manually pausing the monitor
         vm.prank(admin);
         monitor.togglePaused();
 
+        // Expect a revert with "Monitor paused" when checkLiquidityVertex is called while the monitor is paused
         vm.expectRevert("Monitor paused");
 
+        // Simulate the defender relayer attempting to check liquidity while the monitor is paused
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
     }
 
+    /**
+     * @notice Tests that the `mintDollar` function reverts with "Collateral disabled" due to a liquidity drop.
+     * @dev Simulates a liquidity drop below the threshold and ensures that collateral is disabled, causing subsequent attempts to mint dollars to fail.
+     */
     function testMintDollarRevertsWhenCollateralDisabledDueToLiquidityDrop()
         public
     {
         curveDollarPlainPool.updateMockParams(0.99e18);
 
+        // Simulate a user redeeming dollars, causing a significant liquidity drop
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
 
+        // Simulate the defender relayer calling checkLiquidityVertex to trigger the monitor pause and disable collateral
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
+        // Attempt to mint dollars for each collateral, expecting a revert with "Collateral disabled"
         uint256 collateralCount = 3;
         for (uint256 i = 0; i < collateralCount; i++) {
             vm.expectRevert("Collateral disabled");
@@ -476,44 +566,64 @@ contract PoolLiquidityMonitorTest is DiamondTestSetup {
         }
     }
 
+    /**
+     * @notice Tests that the `redeemDollar` function reverts with "Collateral disabled" due to a liquidity drop.
+     * @dev Simulates a liquidity drop below the threshold and ensures that collateral is disabled, causing subsequent attempts to redeem dollars to fail.
+     */
     function testRedeemDollarRevertsWhenCollateralDisabledDueToLiquidityDrop()
         public
     {
         curveDollarPlainPool.updateMockParams(0.99e18);
 
+        // Simulate a user redeeming dollars, causing a significant liquidity drop
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
 
+        // Simulate the defender relayer calling checkLiquidityVertex to trigger the monitor pause and disable collateral
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
+        // Expect a revert with "Collateral disabled" when trying to redeem dollars after the collateral is disabled
         vm.expectRevert("Collateral disabled");
+
+        // Simulate the user attempting to redeem dollars, which should revert due to disabled collateral
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(1, 1e18, 0, 0);
     }
 
+    /**
+     * @notice Tests that the Ubiquity Dollar token reverts transfers with "Pausable: paused" when the token is paused due to a liquidity drop.
+     * @dev Simulates a liquidity drop below the threshold and ensures that the Ubiquity Dollar token is paused, preventing transfers.
+     */
     function testDollarTokenRevertsOnTransferWhenPausedDueToLiquidityDrop()
         public
     {
         curveDollarPlainPool.updateMockParams(0.99e18);
 
+        // Simulate a user redeeming dollars, causing a significant liquidity drop
         vm.prank(user);
         ubiquityPoolFacet.redeemDollar(0, 1e18, 0, 0);
 
+        // Simulate the defender relayer calling checkLiquidityVertex to trigger the monitor pause and pause the dollar token
         vm.prank(defenderRelayer);
         monitor.checkLiquidityVertex();
 
+        // Assert that the Dollar token is paused after the liquidity drop
         bool isPaused = dollarToken.paused();
         assertTrue(
             isPaused,
             "Expected the Dollar token to be paused after the liquidity drop"
         );
 
+        // Get the Ubiquity Dollar token contract
         ERC20Ubiquity dollarToken = ERC20Ubiquity(
             managerFacet.dollarTokenAddress()
         );
 
+        // Expect a revert with "Pausable: paused" when trying to transfer the paused token
         vm.expectRevert("Pausable: paused");
+
+        // Simulate the user attempting to transfer the paused dollar token, which should revert
         vm.prank(user);
         dollarToken.transfer(address(0x123), 1e18);
     }
