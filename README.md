@@ -160,6 +160,10 @@ If successful it will output the accounts generated from the test mnemonic (`tes
 
 We have a [Wiki!](https://github.com/ubiquity/ubiquity-dollar/wiki) feel free to browse it as there is a lot of useful information about the whole repo
 
+## Analytics Dashboard
+
+We have created a [Dune Analytics](https://dune.com/yanvictoreth/ubiquity-protocol) dashboard to visualize data for Ubiquity Protocol.
+
 ## Yarn Workspaces
 
 The repo has been built as a [yarn workspace](https://yarnpkg.com/features/workspaces) monorepo.
