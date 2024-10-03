@@ -2,7 +2,9 @@
 
 # Contents
 - [utils](/src/dollar/interfaces/utils)
+- [IAaveAmo](IAaveAmo.sol/interface.IAaveAmo.md)
 - [IAccessControl](IAccessControl.sol/interface.IAccessControl.md)
+- [IAmo](IAmo.sol/interface.IAmo.md)
 - [IBondingCurve](IBondingCurve.sol/interface.IBondingCurve.md)
 - [ICreditNft](ICreditNft.sol/interface.ICreditNft.md)
 - [ICreditNftManager](ICreditNftManager.sol/interface.ICreditNftManager.md)
@@ -25,6 +27,7 @@
 - [IStableSwap3Pool](IStableSwap3Pool.sol/interface.IStableSwap3Pool.md)
 - [IStaking](IStaking.sol/interface.IStaking.md)
 - [IStakingShare](IStakingShare.sol/interface.IStakingShare.md)
+- [IUbiquityAmoMinter](IUbiquityAmoMinter.sol/interface.IUbiquityAmoMinter.md)
 - [IUbiquityChef](IUbiquityChef.sol/interface.IUbiquityChef.md)
 - [IUbiquityDollarManager](IUbiquityDollarManager.sol/interface.IUbiquityDollarManager.md)
 - [IUbiquityDollarToken](IUbiquityDollarToken.sol/interface.IUbiquityDollarToken.md)

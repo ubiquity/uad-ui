@@ -1,5 +1,5 @@
 # LibDollarMintCalculator
-[Git Source](https://github.com/ubiquity/ubiquity-dollar/blob/c8e4c35e03024dbea12740d3dfedc8e8a0bad6a8/src/dollar/libraries/LibDollarMintCalculator.sol)
+[Git Source](https://github.com/ubiquity/ubiquity-dollar/blob/386de2abb8d1171ab47c0b149dede7c48631259f/src/dollar/libraries/LibDollarMintCalculator.sol)
 
 Calculates amount of Dollars ready to be minted when TWAP price (i.e. Dollar price) > 1$
 

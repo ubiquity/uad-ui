@@ -1,5 +1,5 @@
 # IDollarMintExcess
-[Git Source](https://github.com/ubiquity/ubiquity-dollar/blob/c8e4c35e03024dbea12740d3dfedc8e8a0bad6a8/src/dollar/interfaces/IDollarMintExcess.sol)
+[Git Source](https://github.com/ubiquity/ubiquity-dollar/blob/386de2abb8d1171ab47c0b149dede7c48631259f/src/dollar/interfaces/IDollarMintExcess.sol)
 
 Interface for distributing excess Dollars when `mintClaimableDollars()` is called
 
