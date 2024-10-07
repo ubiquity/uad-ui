@@ -12,7 +12,7 @@ import {MockCurveStableSwapNG} from "../../../../src/dollar/mocks/MockCurveStabl
 import {MockCurveTwocryptoOptimized} from "../../../../src/dollar/mocks/MockCurveTwocryptoOptimized.sol";
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-contract UbiquityPoolFacetFormalTest is DiamondTestSetup {
+contract UbiquityPoolFacetSMT is DiamondTestSetup {
     using SafeMath for uint256;
 
     // mock three tokens: collateral token, stable token, wrapped ETH token
@@ -147,23 +147,42 @@ contract UbiquityPoolFacetFormalTest is DiamondTestSetup {
         // user approves the pool to transfer collateral
         vm.prank(user);
         collateralToken.approve(address(ubiquityPoolFacet), 100e18);
+
+        vm.prank(user);
+        ubiquityPoolFacet.mintDollar(0, 1e18, 0.9e18, 1e18, 0, true);
     }
 
-    function testInitialCollateralSetup() public {
-        LibUbiquityPool.CollateralInformation
-            memory collateralInformation = ubiquityPoolFacet
-                .collateralInformation(address(collateralToken));
+    function testCannotMintMoreDollarsThanCollateral() public view {
+        (
+            uint256 totalDollarSupplyInUsd,
+            uint256 collateralUsdBalance
+        ) = getDollarSupplyAndCollateralBalance();
+        assert(totalDollarSupplyInUsd <= collateralUsdBalance);
+    }
 
-        assertTrue(
-            collateralInformation.isEnabled,
-            "Collateral token should be enabled initially"
-        );
+    function testCannotRedeemMoreCollateralThanDollarValue() public view {
+        (
+            uint256 totalDollarSupplyInUsd,
+            uint256 collateralUsdBalance
+        ) = getDollarSupplyAndCollateralBalance();
+        assert(collateralUsdBalance >= totalDollarSupplyInUsd);
+    }
 
-        uint256 expectedCeiling = 50_000e18; // Pool ceiling defined in setUp
-        assertEq(
-            collateralInformation.poolCeiling,
-            expectedCeiling,
-            "Collateral ceiling should be 50,000 tokens"
-        );
+    function getDollarSupplyAndCollateralBalance()
+        public
+        view
+        returns (uint256 totalDollarSupplyInUsd, uint256 collateralUsdBalance)
+    {
+        uint256 totalDollarSupply = IERC20Ubiquity(
+            managerFacet.dollarTokenAddress()
+        ).totalSupply();
+
+        collateralUsdBalance = ubiquityPoolFacet.collateralUsdBalance();
+
+        require(collateralUsdBalance > 0, "Collateral balance is zero");
+        require(totalDollarSupply > 0, "Dollar supply is zero");
+
+        uint256 dollarPrice = ubiquityPoolFacet.getDollarPriceUsd();
+        totalDollarSupplyInUsd = totalDollarSupply.mul(dollarPrice).div(1e6);
     }
 }

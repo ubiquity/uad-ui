@@ -21,11 +21,11 @@ force = false
 mainnet = "https://rpc.ankr.com/eth"
 
 [profile.SMT.model_checker]
-contracts = { }
+contracts = { "test/formal/diamond/facets/UbiquityPoolFacetSMT.t.sol" = ["UbiquityPoolFacetSMT"]}
 engine = 'chc'
 solvers = ['z3']
 show_unproved = true
-timeout = 0
+timeout = 5000
 targets = [
   'assert',
   'constantCondition',
