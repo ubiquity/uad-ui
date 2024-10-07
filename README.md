@@ -162,7 +162,7 @@ We have a [Wiki!](https://github.com/ubiquity/ubiquity-dollar/wiki) feel free to
 
 ## Analytics Dashboard
 
-We have created a [Dune Analytics](https://dune.com/yanvictoreth/ubiquity-protocol) dashboard to visualize data for Ubiquity Protocol.
+We have created a [Dune Analytics](https://dune.com/ubiquity_dao) dashboard to visualize data for Ubiquity Protocol.
 
 ## Yarn Workspaces
 
