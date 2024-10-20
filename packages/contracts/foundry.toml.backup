@@ -21,7 +21,7 @@ force = false
 mainnet = "https://rpc.ankr.com/eth"
 
 [profile.SMT.model_checker]
-contracts = { "src/dollar/UbiquityPoolWithInvariants.sol" = ["UbiquityPoolWithInvariants"] }
+contracts = {  }
 engine = 'chc'
 solvers = ['z3']
 show_unproved = true
