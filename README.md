@@ -156,6 +156,42 @@ yarn deploy:development # same as above
 
 If successful it will output the accounts generated from the test mnemonic (`test test test test test test test test test test test junk`) and the port it's listening on.
 
+## Our Official Deployments
+
+### Ethereum Mainnet
+
+| Contract                              | Address |
+|---------------------------------------|---------|
+| Proxy Yield Aggregator Beta           | [0x580f30316562448f4642bd33fb44f2ca1bc0cc1e](https://etherscan.io/address/0x580f30316562448f4642bd33fb44f2ca1bc0cc1e) |
+| Bonding.sol                           | [0x831e3674Abc73d7A3e9d8a9400AF2301c32cEF0C](https://etherscan.io/address/0x831e3674Abc73d7A3e9d8a9400AF2301c32cEF0C) |
+| BondingV2.sol                         | [0xc251ecd9f1bd5230823f9a0f99a44a87ddd4ca38](https://etherscan.io/address/0xc251ecd9f1bd5230823f9a0f99a44a87ddd4ca38) |
+| BondingFormulas.sol                   | [0x190474f062d05fba6d46a4d358c4d031075df2b4](https://etherscan.io/address/0x190474f062d05fba6d46a4d358c4d031075df2b4) |
+| BondingShare.sol                      | [0x0013B6033dd999676Dc547CEeCEA29f781D8Db17](https://etherscan.io/address/0x0013B6033dd999676Dc547CEeCEA29f781D8Db17) |
+| BondingShareV2.sol                    | [0x2da07859613c14f6f05c97efe37b9b4f212b5ef5](https://etherscan.io/address/0x2da07859613c14f6f05c97efe37b9b4f212b5ef5) |
+| CouponsForDollarsCalculator.sol       | [0x4F3dF4c1e22209d623ab55923109112f1E2B17DE](https://etherscan.io/address/0x4F3dF4c1e22209d623ab55923109112f1E2B17DE) |
+| CurveUADIncentive.sol                 | [0x86965cdB680350C5de2Fd8D28055DecDDD52745E](https://etherscan.io/address/0x86965cdB680350C5de2Fd8D28055DecDDD52745E) |
+| DEBTCoupon.sol                        | [0xcEFAF85110536eC6F78B0B71624BfA584B6fABa1](https://etherscan.io/address/0xcEFAF85110536eC6F78B0B71624BfA584B6fABa1) |
+| DEBTCouponManager.sol                 | [0x432120Ad63779897A424f7905BA000dF38A74554](https://etherscan.io/address/0x432120Ad63779897A424f7905BA000dF38A74554) |
+| DollarMintingCalculator.sol           | [0xab840faA6A5eF68D8D32370EBC297f4DdC9F870F](https://etherscan.io/address/0xab840faA6A5eF68D8D32370EBC297f4DdC9F870F) |
+| ExcessDollarsDistributor.sol          | [0x25d2b980E406bE97237A06Bca636AeD607661Dfa](https://etherscan.io/address/0x25d2b980E406bE97237A06Bca636AeD607661Dfa) |
+| MasterChef.sol                        | [0x8fFCf9899738e4633A721904609ffCa0a2C44f3D](https://etherscan.io/address/0x8fFCf9899738e4633A721904609ffCa0a2C44f3D) |
+| MasterChefV2.sol                      | [0xb8ec70d24306ecef9d4aaf9986dcb1da5736a997](https://etherscan.io/address/0xb8ec70d24306ecef9d4aaf9986dcb1da5736a997) |
+| MasterChefV2.1.sol                    | [0xdae807071b5ac7b6a2a343bead19929426dbc998](https://etherscan.io/address/0xdae807071b5ac7b6a2a343bead19929426dbc998) |
+| SushiSwapPool.sol                     | [0x534ac94F198F1fef0aDC45227A2185C7cE8d75dC](https://etherscan.io/address/0x534ac94F198F1fef0aDC45227A2185C7cE8d75dC) |
+| TWAPOracle.sol                        | [0x7944d5b8f9668AfB1e648a61e54DEa8DE734c1d1](https://etherscan.io/address/0x7944d5b8f9668AfB1e648a61e54DEa8DE734c1d1) |
+| UARForDollarsCalculator.sol           | [0x75d6F33BcF784504dA74e4aD60c677CD1fD3e2d5](https://etherscan.io/address/0x75d6F33BcF784504dA74e4aD60c677CD1fD3e2d5) |
+| UbiquityAlgorithmicDollarManager.sol | [0x4DA97a8b831C345dBe6d16FF7432DF2b7b776d98](https://etherscan.io/address/0x4DA97a8b831C345dBe6d16FF7432DF2b7b776d98) |
+| UbiquityAlgorithmicDollar.sol         | [0x0F644658510c95CB46955e55D7BA9DDa9E9fBEc6](https://etherscan.io/address/0x0F644658510c95CB46955e55D7BA9DDa9E9fBEc6) |
+| UbiquityAutoRedeem.sol                | [0x5894cFEbFdEdBe61d01F20140f41c5c49AedAe97](https://etherscan.io/address/0x5894cFEbFdEdBe61d01F20140f41c5c49AedAe97) |
+| UbiquityFormulas.sol                  | [0x54F528979A50FA8Fe99E0118EbbEE5fC8Ea802F7](https://etherscan.io/address/0x54F528979A50FA8Fe99E0118EbbEE5fC8Ea802F7) |
+| UbiquityGovernance.sol                | [0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0](https://etherscan.io/address/0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0) |
+
+### Gnosis Chain
+
+| Contract                              | Address |
+|---------------------------------------|---------|
+| UbiquityAlgorithmicDollar.sol         | [0xc6ed4f520f6a4e4dc27273509239b7f8a68d2068](https://gnosisscan.io/address/0xc6ed4f520f6a4e4dc27273509239b7f8a68d2068) |
+
 ## Wiki
 
 We have a [Wiki!](https://github.com/ubiquity/ubiquity-dollar/wiki) feel free to browse it as there is a lot of useful information about the whole repo
