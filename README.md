@@ -160,37 +160,34 @@ If successful it will output the accounts generated from the test mnemonic (`tes
 
 ### Ethereum Mainnet
 
-| Contract                              | Address |
-|---------------------------------------|---------|
-| Proxy Yield Aggregator Beta           | [0x580f30316562448f4642bd33fb44f2ca1bc0cc1e](https://etherscan.io/address/0x580f30316562448f4642bd33fb44f2ca1bc0cc1e) |
-| Bonding.sol                           | [0x831e3674Abc73d7A3e9d8a9400AF2301c32cEF0C](https://etherscan.io/address/0x831e3674Abc73d7A3e9d8a9400AF2301c32cEF0C) |
-| BondingV2.sol                         | [0xc251ecd9f1bd5230823f9a0f99a44a87ddd4ca38](https://etherscan.io/address/0xc251ecd9f1bd5230823f9a0f99a44a87ddd4ca38) |
-| BondingFormulas.sol                   | [0x190474f062d05fba6d46a4d358c4d031075df2b4](https://etherscan.io/address/0x190474f062d05fba6d46a4d358c4d031075df2b4) |
-| BondingShare.sol                      | [0x0013B6033dd999676Dc547CEeCEA29f781D8Db17](https://etherscan.io/address/0x0013B6033dd999676Dc547CEeCEA29f781D8Db17) |
-| BondingShareV2.sol                    | [0x2da07859613c14f6f05c97efe37b9b4f212b5ef5](https://etherscan.io/address/0x2da07859613c14f6f05c97efe37b9b4f212b5ef5) |
-| CouponsForDollarsCalculator.sol       | [0x4F3dF4c1e22209d623ab55923109112f1E2B17DE](https://etherscan.io/address/0x4F3dF4c1e22209d623ab55923109112f1E2B17DE) |
-| CurveUADIncentive.sol                 | [0x86965cdB680350C5de2Fd8D28055DecDDD52745E](https://etherscan.io/address/0x86965cdB680350C5de2Fd8D28055DecDDD52745E) |
-| DEBTCoupon.sol                        | [0xcEFAF85110536eC6F78B0B71624BfA584B6fABa1](https://etherscan.io/address/0xcEFAF85110536eC6F78B0B71624BfA584B6fABa1) |
-| DEBTCouponManager.sol                 | [0x432120Ad63779897A424f7905BA000dF38A74554](https://etherscan.io/address/0x432120Ad63779897A424f7905BA000dF38A74554) |
-| DollarMintingCalculator.sol           | [0xab840faA6A5eF68D8D32370EBC297f4DdC9F870F](https://etherscan.io/address/0xab840faA6A5eF68D8D32370EBC297f4DdC9F870F) |
-| ExcessDollarsDistributor.sol          | [0x25d2b980E406bE97237A06Bca636AeD607661Dfa](https://etherscan.io/address/0x25d2b980E406bE97237A06Bca636AeD607661Dfa) |
-| MasterChef.sol                        | [0x8fFCf9899738e4633A721904609ffCa0a2C44f3D](https://etherscan.io/address/0x8fFCf9899738e4633A721904609ffCa0a2C44f3D) |
-| MasterChefV2.sol                      | [0xb8ec70d24306ecef9d4aaf9986dcb1da5736a997](https://etherscan.io/address/0xb8ec70d24306ecef9d4aaf9986dcb1da5736a997) |
-| MasterChefV2.1.sol                    | [0xdae807071b5ac7b6a2a343bead19929426dbc998](https://etherscan.io/address/0xdae807071b5ac7b6a2a343bead19929426dbc998) |
-| SushiSwapPool.sol                     | [0x534ac94F198F1fef0aDC45227A2185C7cE8d75dC](https://etherscan.io/address/0x534ac94F198F1fef0aDC45227A2185C7cE8d75dC) |
-| TWAPOracle.sol                        | [0x7944d5b8f9668AfB1e648a61e54DEa8DE734c1d1](https://etherscan.io/address/0x7944d5b8f9668AfB1e648a61e54DEa8DE734c1d1) |
-| UARForDollarsCalculator.sol           | [0x75d6F33BcF784504dA74e4aD60c677CD1fD3e2d5](https://etherscan.io/address/0x75d6F33BcF784504dA74e4aD60c677CD1fD3e2d5) |
-| UbiquityAlgorithmicDollarManager.sol | [0x4DA97a8b831C345dBe6d16FF7432DF2b7b776d98](https://etherscan.io/address/0x4DA97a8b831C345dBe6d16FF7432DF2b7b776d98) |
-| UbiquityAlgorithmicDollar.sol         | [0x0F644658510c95CB46955e55D7BA9DDa9E9fBEc6](https://etherscan.io/address/0x0F644658510c95CB46955e55D7BA9DDa9E9fBEc6) |
-| UbiquityAutoRedeem.sol                | [0x5894cFEbFdEdBe61d01F20140f41c5c49AedAe97](https://etherscan.io/address/0x5894cFEbFdEdBe61d01F20140f41c5c49AedAe97) |
-| UbiquityFormulas.sol                  | [0x54F528979A50FA8Fe99E0118EbbEE5fC8Ea802F7](https://etherscan.io/address/0x54F528979A50FA8Fe99E0118EbbEE5fC8Ea802F7) |
-| UbiquityGovernance.sol                | [0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0](https://etherscan.io/address/0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0) |
+| Contract                         | Address                                                                                                               |
+|----------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| Diamond                          | [0xED3084c98148e2528DaDCB53C56352e549C488fA](https://etherscan.io/address/0xED3084c98148e2528DaDCB53C56352e549C488fA) |
+| AccessControlFacet               | [0xe17a61e55ccbc3d1e56b6a26ea1d4f8382a40ad9](https://etherscan.io/address/0xe17a61e55ccbc3d1e56b6a26ea1d4f8382a40ad9) |
+| DiamondCutFacet                  | [0xd3c81bd07948a38546bca894f8bfecb552613798](https://etherscan.io/address/0xd3c81bd07948a38546bca894f8bfecb552613798) |
+| DiamondLoupeFacet                | [0xd11b60c336a8416162272475ff9df572e516fc51](https://etherscan.io/address/0xd11b60c336a8416162272475ff9df572e516fc51) |
+| ManagerFacet                     | [0x0e9f3299b9443d3d5130771f26b7e18a2a7aa9db](https://etherscan.io/address/0x0e9f3299b9443d3d5130771f26b7e18a2a7aa9db) |
+| OwnershipFacet                   | [0x58860e93b6fc7a6e4abd0f5d851a88654a34d0c0](https://etherscan.io/address/0x58860e93b6fc7a6e4abd0f5d851a88654a34d0c0) |
+| UbiquityPoolFacet                | [0xb64f2347752192f51930ad6ad3bea0b3a2074fac](https://etherscan.io/address/0xb64f2347752192f51930ad6ad3bea0b3a2074fac) |
+| UbiquityDollarToken              | [0xb6919Ef2ee4aFC163BC954C5678e2BB570c2D103](https://etherscan.io/address/0xb6919Ef2ee4aFC163BC954C5678e2BB570c2D103) |
+| UbiquityGovernanceToken          | [0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0](https://etherscan.io/address/0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0) |
+| UbiquityAlgorithmicDollarManager | [0x4DA97a8b831C345dBe6d16FF7432DF2b7b776d98](https://etherscan.io/address/0x4DA97a8b831C345dBe6d16FF7432DF2b7b776d98) |
+| BondingV2                        | [0xc251ecd9f1bd5230823f9a0f99a44a87ddd4ca38](https://etherscan.io/address/0xc251ecd9f1bd5230823f9a0f99a44a87ddd4ca38) |
+| BondingShareV2                   | [0x2da07859613c14f6f05c97efe37b9b4f212b5ef5](https://etherscan.io/address/0x2da07859613c14f6f05c97efe37b9b4f212b5ef5) |
+| MasterChefV2.1                   | [0xdae807071b5ac7b6a2a343bead19929426dbc998](https://etherscan.io/address/0xdae807071b5ac7b6a2a343bead19929426dbc998) |
+| Treasury                         | [0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd](https://etherscan.io/address/0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd) |
+| LUSD/UUSD Curve Pool             | [0xcc68509f9ca0e1ed119eac7c468ec1b1c42f384f](https://etherscan.io/address/0xcc68509f9ca0e1ed119eac7c468ec1b1c42f384f) |
+| UBQ/WETH Curve Pool              | [0xacdc85afcd8b83eb171affcbe29fad204f6ae45c](https://etherscan.io/address/0xacdc85afcd8b83eb171affcbe29fad204f6ae45c) |
 
 ### Gnosis Chain
 
-| Contract                              | Address |
-|---------------------------------------|---------|
-| UbiquityAlgorithmicDollar.sol         | [0xc6ed4f520f6a4e4dc27273509239b7f8a68d2068](https://gnosisscan.io/address/0xc6ed4f520f6a4e4dc27273509239b7f8a68d2068) |
+| Contract                 | Address                                                                                                                |
+|--------------------------|------------------------------------------------------------------------------------------------------------------------|
+| UbiquityDollarToken.sol  | [0xc6ed4f520f6a4e4dc27273509239b7f8a68d2068](https://gnosisscan.io/address/0xc6ed4f520f6a4e4dc27273509239b7f8a68d2068) |
+| Treasury                 | [0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd](https://gnosisscan.io/address/0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd) |
+| WXDAI/UUSD Curve Pool    | [0x5c959d2c1a49b637fb988c40d663265f8bf6d289](https://gnosisscan.io/address/0x5c959d2c1a49b637fb988c40d663265f8bf6d289) |
+
+For more information about deployments please refer to the [smart contracts wiki page](https://github.com/ubiquity/ubiquity-dollar/wiki/24.-Smart-Contracts). For an extended list of deprecated deployments, please visit [this page](https://github.com/ubiquity/ubiquity-dollar/wiki/25.-Deprecated-Deployments). 
 
 ## Wiki
 
