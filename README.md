@@ -156,6 +156,39 @@ yarn deploy:development # same as above
 
 If successful it will output the accounts generated from the test mnemonic (`test test test test test test test test test test test junk`) and the port it's listening on.
 
+## Our Official Deployments
+
+### Ethereum Mainnet
+
+| Contract                         | Address                                                                                                               |
+|----------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| Diamond                          | [0xED3084c98148e2528DaDCB53C56352e549C488fA](https://etherscan.io/address/0xED3084c98148e2528DaDCB53C56352e549C488fA) |
+| AccessControlFacet               | [0xe17a61e55ccbc3d1e56b6a26ea1d4f8382a40ad9](https://etherscan.io/address/0xe17a61e55ccbc3d1e56b6a26ea1d4f8382a40ad9) |
+| DiamondCutFacet                  | [0xd3c81bd07948a38546bca894f8bfecb552613798](https://etherscan.io/address/0xd3c81bd07948a38546bca894f8bfecb552613798) |
+| DiamondLoupeFacet                | [0xd11b60c336a8416162272475ff9df572e516fc51](https://etherscan.io/address/0xd11b60c336a8416162272475ff9df572e516fc51) |
+| ManagerFacet                     | [0x0e9f3299b9443d3d5130771f26b7e18a2a7aa9db](https://etherscan.io/address/0x0e9f3299b9443d3d5130771f26b7e18a2a7aa9db) |
+| OwnershipFacet                   | [0x58860e93b6fc7a6e4abd0f5d851a88654a34d0c0](https://etherscan.io/address/0x58860e93b6fc7a6e4abd0f5d851a88654a34d0c0) |
+| UbiquityPoolFacet                | [0xb64f2347752192f51930ad6ad3bea0b3a2074fac](https://etherscan.io/address/0xb64f2347752192f51930ad6ad3bea0b3a2074fac) |
+| UbiquityDollarToken              | [0xb6919Ef2ee4aFC163BC954C5678e2BB570c2D103](https://etherscan.io/address/0xb6919Ef2ee4aFC163BC954C5678e2BB570c2D103) |
+| UbiquityGovernanceToken          | [0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0](https://etherscan.io/address/0x4e38D89362f7e5db0096CE44ebD021c3962aA9a0) |
+| UbiquityAlgorithmicDollarManager | [0x4DA97a8b831C345dBe6d16FF7432DF2b7b776d98](https://etherscan.io/address/0x4DA97a8b831C345dBe6d16FF7432DF2b7b776d98) |
+| BondingV2                        | [0xc251ecd9f1bd5230823f9a0f99a44a87ddd4ca38](https://etherscan.io/address/0xc251ecd9f1bd5230823f9a0f99a44a87ddd4ca38) |
+| BondingShareV2                   | [0x2da07859613c14f6f05c97efe37b9b4f212b5ef5](https://etherscan.io/address/0x2da07859613c14f6f05c97efe37b9b4f212b5ef5) |
+| MasterChefV2.1                   | [0xdae807071b5ac7b6a2a343bead19929426dbc998](https://etherscan.io/address/0xdae807071b5ac7b6a2a343bead19929426dbc998) |
+| Treasury                         | [0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd](https://etherscan.io/address/0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd) |
+| LUSD/UUSD Curve Pool             | [0xcc68509f9ca0e1ed119eac7c468ec1b1c42f384f](https://etherscan.io/address/0xcc68509f9ca0e1ed119eac7c468ec1b1c42f384f) |
+| UBQ/WETH Curve Pool              | [0xacdc85afcd8b83eb171affcbe29fad204f6ae45c](https://etherscan.io/address/0xacdc85afcd8b83eb171affcbe29fad204f6ae45c) |
+
+### Gnosis Chain
+
+| Contract                 | Address                                                                                                                |
+|--------------------------|------------------------------------------------------------------------------------------------------------------------|
+| UbiquityDollarToken.sol  | [0xc6ed4f520f6a4e4dc27273509239b7f8a68d2068](https://gnosisscan.io/address/0xc6ed4f520f6a4e4dc27273509239b7f8a68d2068) |
+| Treasury                 | [0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd](https://gnosisscan.io/address/0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd) |
+| WXDAI/UUSD Curve Pool    | [0x5c959d2c1a49b637fb988c40d663265f8bf6d289](https://gnosisscan.io/address/0x5c959d2c1a49b637fb988c40d663265f8bf6d289) |
+
+For more information about deployments please refer to the [smart contracts wiki page](https://github.com/ubiquity/ubiquity-dollar/wiki/24.-Smart-Contracts). For an extended list of deprecated deployments, please visit [this page](https://github.com/ubiquity/ubiquity-dollar/wiki/25.-Deprecated-Deployments). 
+
 ## Wiki
 
 We have a [Wiki!](https://github.com/ubiquity/ubiquity-dollar/wiki) feel free to browse it as there is a lot of useful information about the whole repo
