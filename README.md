@@ -185,7 +185,7 @@ If successful it will output the accounts generated from the test mnemonic (`tes
 |--------------------------|------------------------------------------------------------------------------------------------------------------------|
 | UbiquityDollarToken.sol  | [0xc6ed4f520f6a4e4dc27273509239b7f8a68d2068](https://gnosisscan.io/address/0xc6ed4f520f6a4e4dc27273509239b7f8a68d2068) |
 | Treasury                 | [0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd](https://gnosisscan.io/address/0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd) |
-| WXDAI/UUSD Curve Pool    | [0x5c959d2c1a49b637fb988c40d663265f8bf6d289](https://gnosisscan.io/address/0x5c959d2c1a49b637fb988c40d663265f8bf6d289) |
+| WXDAI/UUSD Curve Pool    | [0xf3e3376B15aCA6dC3852B131B7dE4851754062eB](https://gnosisscan.io/address/0xf3e3376b15aca6dc3852b131b7de4851754062eb) |
 
 For more information about deployments please refer to the [smart contracts wiki page](https://github.com/ubiquity/ubiquity-dollar/wiki/24.-Smart-Contracts). For an extended list of deprecated deployments, please visit [this page](https://github.com/ubiquity/ubiquity-dollar/wiki/25.-Deprecated-Deployments). 
 
