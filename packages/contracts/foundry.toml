@@ -19,7 +19,7 @@ force = false
 
 [rpc_endpoints]
 mainnet = "https://rpc.ankr.com/eth"
-sepolia = "https://1rpc.io/sepolia"
+sepolia = "https://ethereum-sepolia-rpc.publicnode.com"
 
 [profile.SMT.model_checker]
 contracts = { }
