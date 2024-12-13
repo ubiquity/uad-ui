@@ -7,10 +7,12 @@ Introducing the flagship product of [Ubiquity DAO](https://ubq.fi/). The Ubiquit
 - [Dune Analytics Dashboard](https://dune.com/ubiquity_dao/ubiquity-protocol)
 
 ![Ubiquity Dollar Logo](https://user-images.githubusercontent.com/4975670/153777249-527395c0-0c52-4731-8b0a-77b7885fafda.png)
+
 ## Contributing
 - We welcome everybody to participate in improving the codebase and provide feedback on opened issues.
 - We offer financial incentives for solved issues.
 - Learn how to contribute via the DevPool [here](https://dao.ubq.fi/devpool).
+
 ## Installation
 ### Requirements:
 - NodeJS Version >=18
