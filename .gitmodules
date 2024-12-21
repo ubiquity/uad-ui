@@ -46,3 +46,6 @@
 	path = packages/contracts/lib/aave-v3-periphery
 	url = https://github.com/aave/aave-v3-periphery
 	branch= master
+[submodule "packages/contracts/lib/v3-periphery"]
+	path = packages/contracts/lib/v3-periphery
+	url = https://github.com/Uniswap/v3-periphery
