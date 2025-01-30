@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
+import "forge-std/Test.sol";
+
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {Diamond, DiamondArgs} from "../../src/dollar/Diamond.sol";
 import {ERC1155Ubiquity} from "../../src/dollar/core/ERC1155Ubiquity.sol";

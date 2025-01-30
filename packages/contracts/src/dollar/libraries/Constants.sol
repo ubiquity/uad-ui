@@ -68,6 +68,9 @@ bytes32 constant GOVERNANCE_TOKEN_MANAGER_ROLE = keccak256(
     "GOVERNANCE_TOKEN_MANAGER_ROLE"
 );
 
+/// @dev Role name for Governance token manager
+bytes32 constant DEFENDER_RELAYER_ROLE = keccak256("DEFENDER_RELAYER_ROLE");
+
 /// @dev ETH pseudo address used to distinguish ERC20 tokens and ETH in `LibCollectableDust.sendDust()`
 address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
