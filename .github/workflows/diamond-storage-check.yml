@@ -80,9 +80,9 @@ jobs:
         uses: onbjerg/foundry-toolchain@v1
         with:
           version: nightly
-        
-      - name: Check For Core Contracts Storage Changes
-        uses: Rubilmax/foundry-storage-check@main
+
+      - name: Check For Diamond Storage Changes
+        uses: ubiquity/foundry-storage-check@main
         with:
           workingDirectory: packages/contracts
           contract: ${{ matrix.contract }}
